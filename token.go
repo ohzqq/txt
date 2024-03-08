@@ -52,19 +52,3 @@ func (kw *Token) Add(ids ...int) {
 		}
 	}
 }
-
-func KeywordTokenizer(val any) []*Token {
-	var tokens []string
-	switch v := val.(type) {
-	case string:
-		tokens = append(tokens, v)
-	default:
-		tokens = cast.ToStringSlice(v)
-	}
-	items := make([]*Token, len(tokens))
-	for i, token := range tokens {
-		val := normalizeText(token)
-		items[i] = NewToken(token, val)
-	}
-	return items
-}

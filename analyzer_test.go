@@ -214,10 +214,39 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 	}
 
 	ana := NewAnalyzer(
-		strings.ToLower,
-		RmPunct,
+		Normalize,
 	)
 	ana.SetStopWords(DefaultStopWords())
+	for test, want := range testStrings {
+		tokens, err := ana.Tokenize(test)
+		if err != nil {
+			println(err.Error())
+		}
+		numToks := len(tokens)
+		if want != numToks {
+			println(test)
+			for _, tok := range tokens {
+				println(tok.Label)
+			}
+			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
+		}
+	}
+}
+
+func TestAnalyzerSetFieldsFunc(t *testing.T) {
+	var testStrings = map[string]int{
+		``:                    0,
+		`!@@#$$%%^`:           1,
+		`quick brown fox`:     1,
+		`QUICK BROWN FOX`:     1,
+		`the quick brown fox`: 1,
+		`the quick brown fox jumped and is running`:     1,
+		`the quick, brown fox jumped! (and is running)`: 2,
+		`The quick, brown fox jumped! (And is running)`: 2,
+	}
+
+	ana := NewAnalyzer()
+	ana.SetFieldsFunc(func(r rune) bool { return r == ',' })
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {

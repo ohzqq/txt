@@ -7,16 +7,12 @@ import (
 	"unicode"
 
 	"github.com/kljensen/snowball/english"
-	"github.com/samber/lo"
 )
 
 type Analyzer struct {
-	StopWords    []string
-	Stem         bool
-	AlphaNumOnly bool
-	ToLower      bool
-	fieldsFunc   func(r rune) bool
-	normalizers  []Normalizer
+	StopWords   []string
+	fieldsFunc  func(r rune) bool
+	normalizers []Normalizer
 }
 
 type Normalizer func(string) string
@@ -47,10 +43,8 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 			tok = norm(tok)
 		}
 
-		if ana.RmStopWords() {
-			if ana.IsStopWord(tok) {
-				continue
-			}
+		if ana.RmStopWords() && ana.IsStopWord(tok) {
+			continue
 		}
 
 		if tok != "" {
@@ -59,6 +53,10 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 	}
 
 	return toks, nil
+}
+
+func (ana *Analyzer) SetFieldsFunc(fn func(r rune) bool) {
+	ana.fieldsFunc = fn
 }
 
 func (ana *Analyzer) RmStopWords() bool {
@@ -73,41 +71,10 @@ func (ana *Analyzer) IsStopWord(token string) bool {
 	return slices.Contains(ana.StopWords, token)
 }
 
-func Normalize(ana *Analyzer) {
-	ana.AlphaNumOnly = true
-	ana.ToLower = true
-}
-
-func normalizeText(token string) string {
-	fields := toLower(strings.Split(token, " "))
-	for t, term := range fields {
-		if len(term) == 1 {
-			fields[t] = term
-		} else {
-			fields[t] = RmPunct(term)
-		}
-	}
-	return strings.Join(fields, " ")
-}
-
-func ToLower(ana *Analyzer) {
-	ana.ToLower = true
-}
-
-func toLower(tokens []string) []string {
-	lower := make([]string, len(tokens))
-	for i, str := range tokens {
-		lower[i] = strings.ToLower(str)
-	}
-	return lower
-}
-
-func NoPunct(ana *Analyzer) {
-	ana.AlphaNumOnly = true
-}
-
-func KeepPunct(ana *Analyzer) {
-	ana.AlphaNumOnly = false
+func Normalize(word string) string {
+	word = strings.ToLower(word)
+	word = RmPunct(word)
+	return word
 }
 
 func RmPunct(token string) string {
@@ -122,43 +89,8 @@ func RmPunct(token string) string {
 	return string(s)
 }
 
-func StemWord(ana *Analyzer) {
-	ana.Stem = true
-}
-
-func stemWords(tokens []string) []string {
-	r := make([]string, len(tokens))
-	for i, token := range tokens {
-		r[i] = english.Stem(token, false)
-	}
-	return r
-}
-
 func Stem(token string) string {
 	return english.Stem(token, false)
-}
-
-func WithStopWords(words []string) Opt {
-	return func(ana *Analyzer) {
-		ana.StopWords = words
-	}
-}
-
-func (ana *Analyzer) RmStopWord(word string) string {
-	if !lo.Contains(ana.StopWords, word) {
-		return word
-	}
-	return ""
-}
-
-func rmStopWords(tokens []string) []string {
-	var words []string
-	for _, token := range tokens {
-		if !lo.Contains(stopWords, token) {
-			words = append(words, token)
-		}
-	}
-	return words
 }
 
 func DefaultStopWords() []string {
