@@ -12,21 +12,26 @@ type Analyzer struct {
 type Opt func(*Analyzer)
 
 func NewAnalyzer(opts ...Opt) *Analyzer {
-	ana := &Analyzer{
-		AlphaNumOnly: true,
-		ToLower:      true,
-	}
+	ana := &Analyzer{}
 	for _, opt := range opts {
 		opt(ana)
 	}
 	return ana
 }
 
+func (ana *Analyzer) Tokenize(str string) *Keyword {
+}
+
 func (ana *Analyzer) RmStopWords() bool {
 	return len(ana.StopWords) > 0
 }
 
-func NormalizeText(token string) string {
+func Normalize(ana *Analyzer) {
+	ana.AlphaNumOnly = true
+	ana.ToLower = true
+}
+
+func normalizeText(token string) string {
 	fields := toLower(strings.Split(token, " "))
 	for t, term := range fields {
 		if len(term) == 1 {
