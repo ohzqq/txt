@@ -5,48 +5,47 @@ import (
 	"github.com/spf13/cast"
 )
 
-type Keyword struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
-	Children *Field
-	bits     *roaring.Bitmap
+type Token struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+	bits  *roaring.Bitmap
 }
 
-func NewKeyword(label string) *Keyword {
-	return &Keyword{
-		Value: label,
+func NewToken(label, val string) *Token {
+	return &Token{
+		Value: val,
 		Label: label,
 		bits:  roaring.New(),
 	}
 }
 
-func (kw *Keyword) Bitmap() *roaring.Bitmap {
+func (kw *Token) Bitmap() *roaring.Bitmap {
 	return kw.bits
 }
 
-func (kw *Keyword) SetValue(txt string) *Keyword {
+func (kw *Token) SetValue(txt string) *Token {
 	kw.Value = txt
 	return kw
 }
 
-func (kw *Keyword) Items() []int {
+func (kw *Token) Items() []int {
 	i := kw.bits.ToArray()
 	return cast.ToIntSlice(i)
 }
 
-func (kw *Keyword) Count() int {
+func (kw *Token) Count() int {
 	return int(kw.bits.GetCardinality())
 }
 
-func (kw *Keyword) Len() int {
+func (kw *Token) Len() int {
 	return int(kw.bits.GetCardinality())
 }
 
-func (kw *Keyword) Contains(id int) bool {
+func (kw *Token) Contains(id int) bool {
 	return kw.bits.ContainsInt(id)
 }
 
-func (kw *Keyword) Add(ids ...int) {
+func (kw *Token) Add(ids ...int) {
 	for _, id := range ids {
 		if !kw.Contains(id) {
 			kw.bits.AddInt(id)
@@ -54,7 +53,7 @@ func (kw *Keyword) Add(ids ...int) {
 	}
 }
 
-func KeywordTokenizer(val any) []*Keyword {
+func KeywordTokenizer(val any) []*Token {
 	var tokens []string
 	switch v := val.(type) {
 	case string:
@@ -62,10 +61,10 @@ func KeywordTokenizer(val any) []*Keyword {
 	default:
 		tokens = cast.ToStringSlice(v)
 	}
-	items := make([]*Keyword, len(tokens))
+	items := make([]*Token, len(tokens))
 	for i, token := range tokens {
-		items[i] = NewKeyword(token)
-		items[i].Value = NormalizeText(token)
+		val := normalizeText(token)
+		items[i] = NewToken(token, val)
 	}
 	return items
 }

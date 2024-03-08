@@ -1,29 +1,77 @@
 package txt
 
-import "strings"
+import (
+	"errors"
+	"slices"
+	"strings"
+	"unicode"
+
+	"github.com/kljensen/snowball/english"
+	"github.com/samber/lo"
+)
 
 type Analyzer struct {
 	StopWords    []string
 	Stem         bool
 	AlphaNumOnly bool
 	ToLower      bool
+	fieldsFunc   func(r rune) bool
 }
 
 type Opt func(*Analyzer)
 
 func NewAnalyzer(opts ...Opt) *Analyzer {
-	ana := &Analyzer{}
+	ana := &Analyzer{
+		fieldsFunc: func(r rune) bool { return unicode.IsSpace(r) },
+	}
 	for _, opt := range opts {
 		opt(ana)
 	}
 	return ana
 }
 
-func (ana *Analyzer) Tokenize(str string) *Keyword {
+func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
+	var (
+		toks   []*Token
+		tokens = strings.FieldsFunc(text, ana.fieldsFunc)
+	)
+
+	if len(tokens) == 0 {
+		return toks, errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
+	}
+
+	for _, label := range tokens {
+		tok := label
+		if ana.ToLower {
+			tok = strings.ToLower(tok)
+		}
+
+		if ana.AlphaNumOnly {
+			tok = rmPunct(tok)
+		}
+
+		if ana.RmStopWords() {
+			if !ana.IsStopWord(tok) {
+				break
+			}
+		}
+
+		if ana.Stem {
+			tok = stemWord(tok)
+		}
+
+		toks = append(toks, NewToken(label, tok))
+	}
+
+	return toks, nil
 }
 
 func (ana *Analyzer) RmStopWords() bool {
 	return len(ana.StopWords) > 0
+}
+
+func (ana *Analyzer) IsStopWord(token string) bool {
+	return slices.Contains(ana.StopWords, token)
 }
 
 func Normalize(ana *Analyzer) {
@@ -37,14 +85,14 @@ func normalizeText(token string) string {
 		if len(term) == 1 {
 			fields[t] = term
 		} else {
-			fields[t] = stripAlphaNum(term)
+			fields[t] = rmPunct(term)
 		}
 	}
 	return strings.Join(fields, " ")
 }
 
-func KeepCase(ana *Analyzer) {
-	ana.ToLower = false
+func ToLower(ana *Analyzer) {
+	ana.ToLower = true
 }
 
 func toLower(tokens []string) []string {
@@ -55,17 +103,20 @@ func toLower(tokens []string) []string {
 	return lower
 }
 
+func NoPunct(ana *Analyzer) {
+	ana.AlphaNumOnly = true
+}
+
 func KeepPunct(ana *Analyzer) {
 	ana.AlphaNumOnly = false
 }
 
-func stripAlphaNum(token string) string {
+func rmPunct(token string) string {
 	var s []byte
 	for _, b := range []byte(token) {
 		if ('a' <= b && b <= 'z') ||
 			('A' <= b && b <= 'Z') ||
-			('0' <= b && b <= '9') ||
-			b == ' ' {
+			('0' <= b && b <= '9') {
 			s = append(s, b)
 		}
 	}
@@ -82,6 +133,10 @@ func stemWords(tokens []string) []string {
 		r[i] = english.Stem(token, false)
 	}
 	return r
+}
+
+func stemWord(token string) string {
+	return english.Stem(token, false)
 }
 
 func WithStopWords(words []string) Opt {
