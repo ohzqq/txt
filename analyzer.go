@@ -16,16 +16,17 @@ type Analyzer struct {
 	AlphaNumOnly bool
 	ToLower      bool
 	fieldsFunc   func(r rune) bool
+	normalizers  []Normalizer
 }
+
+type Normalizer func(string) string
 
 type Opt func(*Analyzer)
 
-func NewAnalyzer(opts ...Opt) *Analyzer {
+func NewAnalyzer(normalizers ...Normalizer) *Analyzer {
 	ana := &Analyzer{
-		fieldsFunc: func(r rune) bool { return unicode.IsSpace(r) },
-	}
-	for _, opt := range opts {
-		opt(ana)
+		fieldsFunc:  func(r rune) bool { return unicode.IsSpace(r) },
+		normalizers: normalizers,
 	}
 	return ana
 }
@@ -42,25 +43,19 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 
 	for _, label := range tokens {
 		tok := label
-		if ana.ToLower {
-			tok = strings.ToLower(tok)
-		}
-
-		if ana.AlphaNumOnly {
-			tok = rmPunct(tok)
+		for _, norm := range ana.normalizers {
+			tok = norm(tok)
 		}
 
 		if ana.RmStopWords() {
-			if !ana.IsStopWord(tok) {
-				break
+			if ana.IsStopWord(tok) {
+				continue
 			}
 		}
 
-		if ana.Stem {
-			tok = stemWord(tok)
+		if tok != "" {
+			toks = append(toks, NewToken(label, tok))
 		}
-
-		toks = append(toks, NewToken(label, tok))
 	}
 
 	return toks, nil
@@ -68,6 +63,10 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 
 func (ana *Analyzer) RmStopWords() bool {
 	return len(ana.StopWords) > 0
+}
+
+func (ana *Analyzer) SetStopWords(words []string) {
+	ana.StopWords = words
 }
 
 func (ana *Analyzer) IsStopWord(token string) bool {
@@ -85,7 +84,7 @@ func normalizeText(token string) string {
 		if len(term) == 1 {
 			fields[t] = term
 		} else {
-			fields[t] = rmPunct(term)
+			fields[t] = RmPunct(term)
 		}
 	}
 	return strings.Join(fields, " ")
@@ -111,7 +110,7 @@ func KeepPunct(ana *Analyzer) {
 	ana.AlphaNumOnly = false
 }
 
-func rmPunct(token string) string {
+func RmPunct(token string) string {
 	var s []byte
 	for _, b := range []byte(token) {
 		if ('a' <= b && b <= 'z') ||
@@ -123,7 +122,7 @@ func rmPunct(token string) string {
 	return string(s)
 }
 
-func Stem(ana *Analyzer) {
+func StemWord(ana *Analyzer) {
 	ana.Stem = true
 }
 
@@ -135,7 +134,7 @@ func stemWords(tokens []string) []string {
 	return r
 }
 
-func stemWord(token string) string {
+func Stem(token string) string {
 	return english.Stem(token, false)
 }
 
@@ -143,6 +142,13 @@ func WithStopWords(words []string) Opt {
 	return func(ana *Analyzer) {
 		ana.StopWords = words
 	}
+}
+
+func (ana *Analyzer) RmStopWord(word string) string {
+	if !lo.Contains(ana.StopWords, word) {
+		return word
+	}
+	return ""
 }
 
 func rmStopWords(tokens []string) []string {
