@@ -70,7 +70,7 @@ func TestAnalyzerStripPunct(t *testing.T) {
 	}
 
 	ana := NewAnalyzer(
-		RmPunct,
+		AlphaNum,
 	)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -79,6 +79,10 @@ func TestAnalyzerStripPunct(t *testing.T) {
 		}
 		numToks := len(tokens)
 		if want != numToks {
+			println(test)
+			for _, tok := range tokens {
+				println(tok.Label)
+			}
 			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
 	}
@@ -98,7 +102,7 @@ func TestAnalyzerNormalize(t *testing.T) {
 
 	ana := NewAnalyzer(
 		strings.ToLower,
-		RmPunct,
+		AlphaNum,
 	)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -182,7 +186,7 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 	}
 
 	ana := NewAnalyzer(
-		RmPunct,
+		AlphaNum,
 	)
 	ana.SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
@@ -261,4 +265,14 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
 	}
+}
+
+func TestUnicode(t *testing.T) {
+	//for _, ra := range unicode.S.R16 {
+	//fmt.Printf("%#U\n", int32(ra.Lo))
+	//}
+	//  for _, ra := range unicode.Punct.R32 {
+	//    fmt.Printf("%#U\n", int32(ra.Lo))
+	//  }
+
 }

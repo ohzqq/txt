@@ -15,9 +15,19 @@ type Analyzer struct {
 	normalizers []Normalizer
 }
 
-type Normalizer func(string) string
+type Token struct {
+	Value string `json:"value"`
+	Label string `json:"label"`
+}
 
-type Opt func(*Analyzer)
+func NewToken(label, val string) *Token {
+	return &Token{
+		Value: val,
+		Label: label,
+	}
+}
+
+type Normalizer func(string) string
 
 func NewAnalyzer(normalizers ...Normalizer) *Analyzer {
 	ana := &Analyzer{
@@ -73,11 +83,11 @@ func (ana *Analyzer) IsStopWord(token string) bool {
 
 func Normalize(word string) string {
 	word = strings.ToLower(word)
-	word = RmPunct(word)
+	word = AlphaNum(word)
 	return word
 }
 
-func RmPunct(token string) string {
+func AlphaNum(token string) string {
 	var s []byte
 	for _, b := range []byte(token) {
 		if ('a' <= b && b <= 'z') ||
