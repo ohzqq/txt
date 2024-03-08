@@ -30,6 +30,32 @@ func TestDefaultAnalyzer(t *testing.T) {
 	}
 }
 
+func TestKeywordAnalyzer(t *testing.T) {
+	var testStrings = map[string]int{
+		``:                    0,
+		`!@@#$$%%^`:           1,
+		`quick brown fox`:     1,
+		`QUICK BROWN FOX`:     1,
+		`the quick brown fox`: 1,
+		`the quick brown fox jumped and is running`:     1,
+		`the quick, brown fox jumped! (and is running)`: 1,
+		`The quick, brown fox jumped! (And is running)`: 1,
+	}
+
+	ana := NewAnalyzer()
+	ana.Keywords()
+	for test, want := range testStrings {
+		tokens, err := ana.Tokenize(test)
+		if err != nil {
+			println(err.Error())
+		}
+		numToks := len(tokens)
+		if want != numToks {
+			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
+		}
+	}
+}
+
 func TestAnalyzerToLower(t *testing.T) {
 	var testStrings = map[string]int{
 		``:                    0,
@@ -152,7 +178,7 @@ func TestAnalyzerStopWords(t *testing.T) {
 		`the quick brown fox`: 3,
 		`the quick brown fox jumped and is running`:     5,
 		`the quick, brown fox jumped! (and is running)`: 6,
-		`The quick, brown fox jumped! (And is running)`: 7,
+		`The quick, brown fox jumped! (And is running)`: 6,
 	}
 
 	ana := NewAnalyzer()
@@ -182,7 +208,7 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 		`the quick brown fox`: 3,
 		`the quick brown fox jumped and is running`:     5,
 		`the quick, brown fox jumped! (and is running)`: 5,
-		`The quick, brown fox jumped! (And is running)`: 7,
+		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
 	ana := NewAnalyzer(

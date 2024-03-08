@@ -15,18 +15,6 @@ type Analyzer struct {
 	normalizers []Normalizer
 }
 
-type Token struct {
-	Value string `json:"value"`
-	Label string `json:"label"`
-}
-
-func NewToken(label, val string) *Token {
-	return &Token{
-		Value: val,
-		Label: label,
-	}
-}
-
 type Normalizer func(string) string
 
 func NewAnalyzer(normalizers ...Normalizer) *Analyzer {
@@ -37,11 +25,17 @@ func NewAnalyzer(normalizers ...Normalizer) *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
+func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
 	var (
-		toks   []*Token
-		tokens = strings.FieldsFunc(text, ana.fieldsFunc)
+		toks   Tokens
+		tokens []string
 	)
+
+	if ana.fieldsFunc == nil {
+		tokens = []string{text}
+	} else {
+		tokens = strings.FieldsFunc(text, ana.fieldsFunc)
+	}
 
 	if len(tokens) == 0 {
 		return toks, errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
@@ -53,8 +47,10 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 			tok = norm(tok)
 		}
 
-		if ana.RmStopWords() && ana.IsStopWord(tok) {
-			continue
+		if ana.RmStopWords() {
+			if ana.IsStopWord(strings.ToLower(tok)) {
+				continue
+			}
 		}
 
 		if tok != "" {
@@ -67,6 +63,10 @@ func (ana *Analyzer) Tokenize(text string) ([]*Token, error) {
 
 func (ana *Analyzer) SetFieldsFunc(fn func(r rune) bool) {
 	ana.fieldsFunc = fn
+}
+
+func (ana *Analyzer) Keywords() {
+	ana.SetFieldsFunc(nil)
 }
 
 func (ana *Analyzer) RmStopWords() bool {
