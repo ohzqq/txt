@@ -1,10 +1,10 @@
-package facet
+package txt
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/kljensen/snowball/english"
 	"github.com/spf13/cast"
 )
 
@@ -57,15 +57,6 @@ func (kw *Keyword) Add(ids ...int) {
 	}
 }
 
-func (kw *Keyword) MarshalJSON() ([]byte, error) {
-	item := map[string]any{
-		"count": kw.Len(),
-		"value": kw.Label,
-		"hits":  kw.Items(),
-	}
-	return json.Marshal(item)
-}
-
 func KeywordTokenizer(val any) []*Keyword {
 	var tokens []string
 	switch v := val.(type) {
@@ -82,7 +73,7 @@ func KeywordTokenizer(val any) []*Keyword {
 	return items
 }
 
-func normalizeText(token string) string {
+func NormalizeText(token string) string {
 	fields := lowerCase(strings.Split(token, " "))
 	for t, term := range fields {
 		if len(term) == 1 {
@@ -94,7 +85,7 @@ func normalizeText(token string) string {
 	return strings.Join(fields, " ")
 }
 
-func lowerCase(tokens []string) []string {
+func LowerCase(tokens []string) []string {
 	lower := make([]string, len(tokens))
 	for i, str := range tokens {
 		lower[i] = strings.ToLower(str)
@@ -102,7 +93,7 @@ func lowerCase(tokens []string) []string {
 	return lower
 }
 
-func stripNonAlphaNumeric(token string) string {
+func StripNonAlphaNumeric(token string) string {
 	s := []byte(token)
 	n := 0
 	for _, b := range s {
@@ -115,4 +106,22 @@ func stripNonAlphaNumeric(token string) string {
 		}
 	}
 	return string(s[:n])
+}
+
+func Stem(tokens []string) []string {
+	r := make([]string, len(tokens))
+	for i, token := range tokens {
+		r[i] = english.Stem(token, false)
+	}
+	return r
+}
+
+func StopWords(tokens []string) []string {
+	var words []string
+	for _, token := range tokens {
+		if !lo.Contains(stopWords, token) {
+			words = append(words, token)
+		}
+	}
+	return words
 }
