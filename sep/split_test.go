@@ -7,7 +7,8 @@ import (
 
 func TestSplit(t *testing.T) {
 	var testStrings = map[string]int{
-		`the quick, brown fox jumped! (and is running)`: 8,
+		`the quick brown fox jumped! (and is running)`: 8,
+		`the quick,brown fox jumped! (and is running)`: 8,
 	}
 	for test, want := range testStrings {
 		split := Split(test)
