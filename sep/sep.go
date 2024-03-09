@@ -1,6 +1,7 @@
 package sep
 
 import (
+	"strings"
 	"unicode"
 )
 
@@ -21,8 +22,6 @@ var (
 
 type Sep int
 
-type Seps []Sep
-
 const (
 	Whitespace Sep = iota
 	Space
@@ -30,6 +29,13 @@ const (
 	Comma
 	Tab
 )
+
+func Split(str string, seps ...Sep) []string {
+	if len(seps) == 0 {
+		return []string{str}
+	}
+	return strings.FieldsFunc(str, separators[seps[0]])
+}
 
 func ShouldSplit(seps []Sep) func(r rune) bool {
 	return func(r rune) bool {
@@ -40,30 +46,4 @@ func ShouldSplit(seps []Sep) func(r rune) bool {
 		}
 		return false
 	}
-}
-
-func (s Sep) SplitOn(r rune) bool {
-	return separators[s](r)
-	//switch s {
-	//case Whitespace:
-	//  return unicode.IsSpace(r)
-	//case Newline:
-	//  return r == '\r' || r == '\n'
-	//case Comma:
-	//  return r == ','
-	//case Tab:
-	//  return r == '\t'
-	//case Space:
-	//  return r == ' '
-	//default:
-	//  return false
-	//}
-
-}
-
-//func (s Sep) Contains(s string, r rune) bool {
-//}
-
-func IsWhitespace(r rune) bool {
-	return unicode.IsSpace(r)
 }

@@ -11,13 +11,13 @@ func TestSplit(t *testing.T) {
 		`the quick,brown fox jumped! (and is running)`: 8,
 	}
 	for test, want := range testStrings {
-		split := Split(test)
+		split := Split(test, Space)
 		fmt.Printf("got %d strings, wanted %d\n", len(split), want)
 		for _, s := range split {
 			fmt.Printf("split %v\n", s)
 		}
 
-		split = Split(test, Comma, Space)
+		split = Split(test, Comma)
 		fmt.Printf("got %d strings, wanted %d\n", len(split), want)
 		for _, s := range split {
 			fmt.Printf("split %v\n", s)
