@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	"github.com/kljensen/snowball/english"
+	"github.com/ohzqq/txt/sep"
 )
 
 var (
@@ -26,7 +27,7 @@ type Normalizer func(string) string
 
 type Sep func(r rune) bool
 
-func NewAnalyzer(normalizers []Normalizer, sep ...Sep) *Analyzer {
+func NewAnalyzer(normalizers []Normalizer, sep ...sep.Func) *Analyzer {
 	ana := &Analyzer{
 		normalizers: normalizers,
 	}
@@ -49,7 +50,7 @@ func SplitOnSpaces(normalizers ...Normalizer) *Analyzer {
 	return ana
 }
 
-func Normalize(splitter ...Sep) *Analyzer {
+func Normalize(splitter ...sep.Func) *Analyzer {
 	ana := NewAnalyzer([]Normalizer{
 		strings.ToLower,
 		AlphaNum,
@@ -57,7 +58,7 @@ func Normalize(splitter ...Sep) *Analyzer {
 	return ana
 }
 
-func Complex(splitter ...Sep) *Analyzer {
+func Complex(splitter ...sep.Func) *Analyzer {
 	ana := NewAnalyzer([]Normalizer{
 		strings.ToLower,
 		AlphaNum,

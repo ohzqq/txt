@@ -3,6 +3,8 @@ package txt
 import (
 	"strings"
 	"testing"
+
+	"github.com/ohzqq/txt/sep"
 )
 
 func TestDefaultAnalyzer(t *testing.T) {
@@ -104,10 +106,7 @@ func TestFuzzySearchNormalized(t *testing.T) {
 		`The quick, brown fox jumping! (And is running)`: 8,
 	}
 
-	ana := SplitOnSpaces(
-		strings.ToLower,
-		AlphaNum,
-	)
+	ana := Normalize(sep.Whitespace)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -115,7 +114,7 @@ func TestFuzzySearchNormalized(t *testing.T) {
 		}
 		numToks := len(tokens)
 		if want != numToks {
-			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
+			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
 
 		m := tokens.FuzzyFind("ing")

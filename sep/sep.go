@@ -5,45 +5,17 @@ import (
 	"unicode"
 )
 
-var (
-	whitespace = func(r rune) bool { return unicode.IsSpace(r) }
-	comma      = func(r rune) bool { return r == ',' }
-	space      = func(r rune) bool { return r == ' ' }
-	tab        = func(r rune) bool { return r == '\t' }
-	newline    = func(r rune) bool { return r == '\r' || r == '\n' }
-	separators = map[Sep]func(r rune) bool{
-		Whitespace: whitespace,
-		Space:      space,
-		Comma:      comma,
-		Tab:        tab,
-		Newline:    newline,
-	}
-)
+type Func func(r rune) bool
 
-type Sep int
-
-const (
-	Whitespace Sep = iota
-	Space
-	Newline
-	Comma
-	Tab
-)
-
-func Split(str string, seps ...Sep) []string {
+func Split(str string, seps ...Func) []string {
 	if len(seps) == 0 {
 		return []string{str}
 	}
-	return strings.FieldsFunc(str, separators[seps[0]])
+	return strings.FieldsFunc(str, seps[0])
 }
 
-func ShouldSplit(seps []Sep) func(r rune) bool {
-	return func(r rune) bool {
-		for _, sep := range seps {
-			if sh := separators[sep](r); sh {
-				return sh
-			}
-		}
-		return false
-	}
-}
+func Whitespace(r rune) bool { return unicode.IsSpace(r) }
+func Comma(r rune) bool      { return r == ',' }
+func Space(r rune) bool      { return r == ' ' }
+func Tab(r rune) bool        { return r == '\t' }
+func Newline(r rune) bool    { return r == '\r' || r == '\n' }
