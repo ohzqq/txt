@@ -222,7 +222,7 @@ func TestAnalyzerStem(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(Stem).WithSep(sep.Whitespace)
+	ana := New(Stem)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -248,7 +248,6 @@ func TestAnalyzerStopWords(t *testing.T) {
 	}
 
 	ana := New().
-		WithSep(sep.Space).
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -279,7 +278,6 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 	}
 
 	ana := New(AlphaNum).
-		WithSep(sep.Whitespace).
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -311,6 +309,35 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 
 	ana := Normalize()
 	ana.SetStopWords(DefaultStopWords())
+	for test, want := range testStrings {
+		tokens, err := ana.Tokenize(test)
+		if err != nil {
+			println(err.Error())
+		}
+		numToks := len(tokens)
+		if want != numToks {
+			println(test)
+			for _, tok := range tokens {
+				println(tok.Label)
+			}
+			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
+		}
+	}
+}
+
+func TestAnalyzerKitchenSink(t *testing.T) {
+	var testStrings = map[string]int{
+		``:                    0,
+		`!@@#$$%%^`:           0,
+		`quick brown fox`:     3,
+		`QUICK BROWN FOX`:     3,
+		`the quick brown fox`: 3,
+		`the quick brown fox jumped and is running`:     5,
+		`the quick, brown fox jumped! (and is running)`: 5,
+		`The quick, brown fox jumped! (And is running)`: 5,
+	}
+
+	ana := Normalize(WithStemmer, WithDefaultStopWords)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {

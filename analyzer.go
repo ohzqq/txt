@@ -26,21 +26,36 @@ func New(normies ...Normalizer) *Analyzer {
 	}
 }
 
+func WithStopWords(words []string) Option {
+	return func(ana *Analyzer) {
+		ana.SetStopWords(words)
+	}
+}
+
+func WithDefaultStopWords(ana *Analyzer) {
+	ana.StopWords = stopWords
+}
+
+func WithStemmer(ana *Analyzer) {
+	ana.normalizers = append(ana.normalizers, Stem)
+}
+
 func Simple() *Analyzer {
 	return New()
 }
 
-func Keyword(splitter ...sep.Func) *Analyzer {
-	ana := New(strings.ToLower)
-	return ana
+func Keywords() *Analyzer {
+	return New(strings.ToLower).Keywords()
 }
 
-func Normalize() *Analyzer {
+func Normalize(opts ...Option) *Analyzer {
 	ana := New(
 		strings.ToLower,
 		AlphaNum,
 	)
-	ana.WithSep(sep.Whitespace)
+	for _, opt := range opts {
+		opt(ana)
+	}
 	return ana
 }
 
