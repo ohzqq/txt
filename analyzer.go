@@ -54,10 +54,6 @@ func WithStemmer(ana *Analyzer) {
 	ana.normalizers = append(ana.normalizers, Stem)
 }
 
-func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
-	return Tokenize(text, ana)
-}
-
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
 	ana.sep = sep
 	return ana

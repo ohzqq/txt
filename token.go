@@ -22,7 +22,7 @@ func NewToken(label, val string) *Token {
 	}
 }
 
-func Tokenize(text string, ana *Analyzer) (Tokens, error) {
+func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 	var (
 		toks   Tokens
 		tokens []string
