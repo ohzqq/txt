@@ -41,12 +41,10 @@ func Simple() *Analyzer {
 	return NewAnalyzer([]Normalizer{})
 }
 
-func Keyword(normalizers ...Normalizer) *Analyzer {
-	return NewAnalyzer(normalizers)
-}
-
-func SplitOnSpaces(normalizers ...Normalizer) *Analyzer {
-	ana := NewAnalyzer(normalizers, Space)
+func Keyword(splitter ...sep.Func) *Analyzer {
+	ana := NewAnalyzer([]Normalizer{
+		strings.ToLower,
+	}, splitter...)
 	return ana
 }
 
