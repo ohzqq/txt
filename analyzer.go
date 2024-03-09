@@ -26,20 +26,6 @@ func New(normies ...Normalizer) *Analyzer {
 	}
 }
 
-func WithStopWords(words []string) Option {
-	return func(ana *Analyzer) {
-		ana.SetStopWords(words)
-	}
-}
-
-func WithDefaultStopWords(ana *Analyzer) {
-	ana.StopWords = stopWords
-}
-
-func WithStemmer(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, Stem)
-}
-
 func Simple() *Analyzer {
 	return New()
 }
@@ -59,14 +45,18 @@ func Normalize(opts ...Option) *Analyzer {
 	return ana
 }
 
-func Complex() *Analyzer {
-	ana := New(
-		strings.ToLower,
-		AlphaNum,
-		Stem,
-	)
-	ana.StopWords = DefaultStopWords()
-	return ana
+func WithStopWords(words []string) Option {
+	return func(ana *Analyzer) {
+		ana.SetStopWords(words)
+	}
+}
+
+func WithDefaultStopWords(ana *Analyzer) {
+	ana.StopWords = stopWords
+}
+
+func WithStemmer(ana *Analyzer) {
+	ana.normalizers = append(ana.normalizers, Stem)
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
@@ -126,12 +116,6 @@ func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 
 func (ana *Analyzer) IsStopWord(token string) bool {
 	return slices.Contains(ana.StopWords, token)
-}
-
-func NormalizeWord(word string) string {
-	word = strings.ToLower(word)
-	word = AlphaNum(word)
-	return word
 }
 
 func AlphaNum(token string) string {
