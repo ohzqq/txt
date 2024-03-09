@@ -9,6 +9,13 @@ import (
 	"github.com/kljensen/snowball/english"
 )
 
+var (
+	SpaceSep   = func(r rune) bool { return unicode.IsSpace(r) }
+	CommaSep   = func(r rune) bool { return r == ',' }
+	TabSep     = func(r rune) bool { return r == '\t' }
+	NewlineSep = func(r rune) bool { return r == '\r' || r == '\n' }
+)
+
 type Analyzer struct {
 	StopWords   []string
 	fieldsFunc  func(r rune) bool
@@ -17,11 +24,46 @@ type Analyzer struct {
 
 type Normalizer func(string) string
 
-func NewAnalyzer(normalizers ...Normalizer) *Analyzer {
+type Sep func(r rune) bool
+
+func NewAnalyzer(normalizers []Normalizer, sep ...Sep) *Analyzer {
 	ana := &Analyzer{
-		fieldsFunc:  func(r rune) bool { return unicode.IsSpace(r) },
 		normalizers: normalizers,
 	}
+	if len(sep) > 0 {
+		ana.fieldsFunc = sep[0]
+	}
+	return ana
+}
+
+func Simple() *Analyzer {
+	return NewAnalyzer([]Normalizer{})
+}
+
+func Keyword(normalizers ...Normalizer) *Analyzer {
+	return NewAnalyzer(normalizers)
+}
+
+func SplitOnSpaces(normalizers ...Normalizer) *Analyzer {
+	ana := NewAnalyzer(normalizers, SpaceSep)
+	return ana
+}
+
+func Normalize(splitter ...Sep) *Analyzer {
+	ana := NewAnalyzer([]Normalizer{
+		strings.ToLower,
+		AlphaNum,
+	}, splitter...)
+	return ana
+}
+
+func Complex(splitter ...Sep) *Analyzer {
+	ana := NewAnalyzer([]Normalizer{
+		strings.ToLower,
+		AlphaNum,
+		Stem,
+	}, splitter...)
+	ana.StopWords = DefaultStopWords()
 	return ana
 }
 
@@ -81,7 +123,7 @@ func (ana *Analyzer) IsStopWord(token string) bool {
 	return slices.Contains(ana.StopWords, token)
 }
 
-func Normalize(word string) string {
+func NormalizeWord(word string) string {
 	word = strings.ToLower(word)
 	word = AlphaNum(word)
 	return word

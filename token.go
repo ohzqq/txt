@@ -23,7 +23,7 @@ func (toks Tokens) Find(q string) Tokens {
 		if tok.Value == q {
 			tok.Match = fuzzy.Match{
 				Index: i,
-				Str:   tok.Value,
+				Str:   tok.Label,
 			}
 			tokens = append(tokens, tok)
 		}
@@ -36,6 +36,7 @@ func (toks Tokens) FuzzyFind(q string) Tokens {
 	for _, m := range fuzzy.FindFrom(q, toks) {
 		tok := toks[m.Index]
 		tok.Match = m
+		tok.Match.Str = tok.Label
 		tokens = append(tokens, tok)
 	}
 	return tokens
