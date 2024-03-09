@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	SpaceSep   = func(r rune) bool { return unicode.IsSpace(r) }
+	Space      = func(r rune) bool { return unicode.IsSpace(r) }
 	CommaSep   = func(r rune) bool { return r == ',' }
 	TabSep     = func(r rune) bool { return r == '\t' }
 	NewlineSep = func(r rune) bool { return r == '\r' || r == '\n' }
@@ -45,7 +45,7 @@ func Keyword(normalizers ...Normalizer) *Analyzer {
 }
 
 func SplitOnSpaces(normalizers ...Normalizer) *Analyzer {
-	ana := NewAnalyzer(normalizers, SpaceSep)
+	ana := NewAnalyzer(normalizers, Space)
 	return ana
 }
 
