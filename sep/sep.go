@@ -22,8 +22,10 @@ var (
 
 type Sep int
 
+type Splitter func(string) []string
+
 const (
-	Whitespace = iota
+	Whitespace Sep = iota
 	Space
 	Newline
 	Comma
@@ -32,27 +34,29 @@ const (
 
 func Split(str string, seps ...Sep) []string {
 	if len(seps) == 0 {
-		seps = append(seps, Space)
+		return strings.Split(str, " ")
 	}
-	fields := splitField(str, seps[0])
-	for _, sep := range seps[0:] {
+	//fields = append(fields, strings.FieldsFunc(str, separators[seps[0]])...)
+	//c := 1
+	//if len(seps) > c {
+	//for i := c; i < len(seps); i++ {
+	var fields []string
+	for _, sep := range seps {
 		for _, s := range fields {
-			fields = append(fields, Split(s, sep)...)
+			//println(s)
+			//fields = append(fields, strings.FieldsFunc(s, separators[seps[i]])...)
+			fields = append(fields, splitStrings(sep, s)...)
 		}
 	}
 	return fields
 }
 
-func splitField(sep Sep, fields ...string) []string {
-	var split []string
-	switch len(fields) {
-	case 0:
-		return split
-	case 1:
-		split = append(split, strings.FieldsFunc(fields[0], sep))
-	default:
-		split = append(splits, splitField)
+func splitStrings(sep Sep, strs ...string) []string {
+	var s []string
+	for _, str := range strs {
+		s = append(s, strings.FieldsFunc(str, separators[sep])...)
 	}
+	return s
 }
 
 func IsWhitespace(r rune) bool {
