@@ -366,7 +366,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 2,
 	}
 
-	ana := Simple().WithSep(sep.Comma)
+	ana := New().WithSep(sep.Comma)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {

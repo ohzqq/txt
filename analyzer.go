@@ -26,10 +26,6 @@ func New(normies ...Normalizer) *Analyzer {
 	}
 }
 
-func Simple() *Analyzer {
-	return New()
-}
-
 func Keywords() *Analyzer {
 	return New(strings.ToLower).Keywords()
 }
