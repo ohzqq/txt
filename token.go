@@ -1,6 +1,11 @@
 package txt
 
-import "github.com/sahilm/fuzzy"
+import (
+	"errors"
+	"strings"
+
+	"github.com/sahilm/fuzzy"
+)
 
 type Token struct {
 	Value string `json:"value"`
@@ -15,6 +20,42 @@ func NewToken(label, val string) *Token {
 		Value: val,
 		Label: label,
 	}
+}
+
+func Tokenize(text string, ana *Analyzer) (Tokens, error) {
+	var (
+		toks   Tokens
+		tokens []string
+	)
+
+	if ana.sep == nil {
+		tokens = []string{text}
+	} else {
+		tokens = strings.FieldsFunc(text, ana.sep)
+	}
+
+	if len(tokens) == 0 {
+		return toks, errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
+	}
+
+	for _, label := range tokens {
+		tok := label
+		for _, norm := range ana.normalizers {
+			tok = norm(tok)
+		}
+
+		if ana.RmStopWords() {
+			if ana.IsStopWord(strings.ToLower(tok)) {
+				continue
+			}
+		}
+
+		if tok != "" {
+			toks = append(toks, NewToken(label, tok))
+		}
+	}
+
+	return toks, nil
 }
 
 func (toks Tokens) Find(q string) Tokens {
