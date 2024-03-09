@@ -4,65 +4,58 @@ import (
 	"errors"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/kljensen/snowball/english"
 	"github.com/ohzqq/txt/sep"
 )
 
-var (
-	Space      = func(r rune) bool { return unicode.IsSpace(r) }
-	CommaSep   = func(r rune) bool { return r == ',' }
-	TabSep     = func(r rune) bool { return r == '\t' }
-	NewlineSep = func(r rune) bool { return r == '\r' || r == '\n' }
-)
-
 type Analyzer struct {
 	StopWords   []string
-	fieldsFunc  func(r rune) bool
+	sep         sep.Func
 	normalizers []Normalizer
 }
 
 type Normalizer func(string) string
 
-type Sep func(r rune) bool
+type Option func(*Analyzer)
 
-func NewAnalyzer(normalizers []Normalizer, sep ...sep.Func) *Analyzer {
-	ana := &Analyzer{
-		normalizers: normalizers,
+func New(normies ...Normalizer) *Analyzer {
+	return &Analyzer{
+		normalizers: normies,
+		sep:         sep.Whitespace,
 	}
-	if len(sep) > 0 {
-		ana.fieldsFunc = sep[0]
-	}
-	return ana
 }
 
 func Simple() *Analyzer {
-	return NewAnalyzer([]Normalizer{})
+	return New()
 }
 
 func Keyword(splitter ...sep.Func) *Analyzer {
-	ana := NewAnalyzer([]Normalizer{
-		strings.ToLower,
-	}, splitter...)
+	ana := New(strings.ToLower)
 	return ana
 }
 
-func Normalize(splitter ...sep.Func) *Analyzer {
-	ana := NewAnalyzer([]Normalizer{
+func Normalize() *Analyzer {
+	ana := New(
 		strings.ToLower,
 		AlphaNum,
-	}, splitter...)
+	)
+	ana.WithSep(sep.Whitespace)
 	return ana
 }
 
-func Complex(splitter ...sep.Func) *Analyzer {
-	ana := NewAnalyzer([]Normalizer{
+func Complex() *Analyzer {
+	ana := New(
 		strings.ToLower,
 		AlphaNum,
 		Stem,
-	}, splitter...)
+	)
 	ana.StopWords = DefaultStopWords()
+	return ana
+}
+
+func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
+	ana.sep = sep
 	return ana
 }
 
@@ -72,10 +65,10 @@ func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
 		tokens []string
 	)
 
-	if ana.fieldsFunc == nil {
+	if ana.sep == nil {
 		tokens = []string{text}
 	} else {
-		tokens = strings.FieldsFunc(text, ana.fieldsFunc)
+		tokens = strings.FieldsFunc(text, ana.sep)
 	}
 
 	if len(tokens) == 0 {
@@ -102,20 +95,18 @@ func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
 	return toks, nil
 }
 
-func (ana *Analyzer) SetFieldsFunc(fn func(r rune) bool) {
-	ana.fieldsFunc = fn
-}
-
-func (ana *Analyzer) Keywords() {
-	ana.SetFieldsFunc(nil)
+func (ana *Analyzer) Keywords() *Analyzer {
+	ana.sep = nil
+	return ana
 }
 
 func (ana *Analyzer) RmStopWords() bool {
 	return len(ana.StopWords) > 0
 }
 
-func (ana *Analyzer) SetStopWords(words []string) {
+func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 	ana.StopWords = words
+	return ana
 }
 
 func (ana *Analyzer) IsStopWord(token string) bool {

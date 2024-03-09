@@ -1,6 +1,7 @@
 package txt
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ohzqq/txt/sep"
@@ -18,7 +19,7 @@ func TestDefaultAnalyzer(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := NewAnalyzer([]Normalizer{}, sep.Space)
+	ana := New()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -43,7 +44,7 @@ func TestKeywordAnalyzer(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 1,
 	}
 
-	ana := Keyword()
+	ana := New().Keywords()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -68,7 +69,7 @@ func TestFuzzySearch(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 1,
 	}
 
-	ana := Keyword()
+	ana := New().Keywords()
 	//ana.Keywords()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -105,7 +106,7 @@ func TestFuzzySearchNormalized(t *testing.T) {
 		`The quick, brown fox jumping! (And is running)`: 8,
 	}
 
-	ana := Normalize(sep.Whitespace)
+	ana := Normalize()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -142,7 +143,7 @@ func TestAnalyzerToLower(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := Keyword(sep.Space)
+	ana := New(strings.ToLower)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -167,10 +168,7 @@ func TestAnalyzerStripPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := NewAnalyzer(
-		[]Normalizer{AlphaNum},
-		sep.Space,
-	)
+	ana := New(AlphaNum)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -199,7 +197,7 @@ func TestAnalyzerNormalize(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := Normalize(sep.Space)
+	ana := Normalize()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -224,10 +222,7 @@ func TestAnalyzerStem(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := NewAnalyzer(
-		[]Normalizer{Stem},
-		sep.Space,
-	)
+	ana := New(Stem).WithSep(sep.Whitespace)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -252,8 +247,9 @@ func TestAnalyzerStopWords(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 6,
 	}
 
-	ana := NewAnalyzer([]Normalizer{}, sep.Space)
-	ana.SetStopWords(DefaultStopWords())
+	ana := New().
+		WithSep(sep.Space).
+		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -282,11 +278,9 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := NewAnalyzer(
-		[]Normalizer{AlphaNum},
-		sep.Whitespace,
-	)
-	ana.SetStopWords(DefaultStopWords())
+	ana := New(AlphaNum).
+		WithSep(sep.Whitespace).
+		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
@@ -315,7 +309,7 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := Normalize(sep.Space)
+	ana := Normalize()
 	ana.SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
@@ -345,8 +339,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 2,
 	}
 
-	ana := Simple()
-	ana.SetFieldsFunc(func(r rune) bool { return r == ',' })
+	ana := Simple().WithSep(sep.Comma)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil {
