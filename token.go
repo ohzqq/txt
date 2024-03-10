@@ -6,7 +6,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ohzqq/txt/sep"
 	"github.com/sahilm/fuzzy"
+	"github.com/samber/lo"
 )
 
 type Token struct {
@@ -39,34 +41,53 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 		return toks, EmptyStrErr
 	}
 
-	if ana.sep == nil {
-		tokens = []string{text}
-	} else {
-		tokens = strings.FieldsFunc(text, ana.sep)
-	}
+	tokens = Split(text, ana.sep)
 
 	if len(tokens) == 0 {
 		return toks, FieldsFuncErr
 	}
 
-	for _, label := range tokens {
-		tok := label
-		for _, norm := range ana.normalizers {
-			tok = norm(tok)
-		}
-
-		if ana.RmStopWords() {
-			if ana.IsStopWord(strings.ToLower(tok)) {
-				continue
-			}
-		}
-
-		if tok != "" {
-			toks = append(toks, NewToken(label, tok))
-		}
+	if len(ana.normalizers) > 0 {
+		toks = Normalize(tokens, ana.normalizers)
 	}
 
+	toks = WithoutStopWords(toks, ana.Stopwords())
+
 	return toks, nil
+}
+
+func Split(str string, s sep.Func) []string {
+	if s == nil {
+		return []string{str}
+	}
+	return strings.FieldsFunc(str, s)
+}
+
+func Normalize(ls []string, normies []Normalizer) Tokens {
+	toks := make(Tokens, len(ls))
+	for i, l := range ls {
+		t := normalize(l, normies)
+		toks[i] = NewToken(l, t)
+	}
+	return toks
+}
+
+func WithoutStopWords(toks Tokens, sw Tokens) Tokens {
+	return lo.Without(toks, sw...)
+}
+
+func normalizeSlice(ls []string, normies []Normalizer) []string {
+	for i, l := range ls {
+		ls[i] = normalize(l, normies)
+	}
+	return ls
+}
+
+func normalize(label string, normies []Normalizer) string {
+	for _, norm := range normies {
+		label = norm(label)
+	}
+	return label
 }
 
 func newMatch(str string, idx int) fuzzy.Match {
@@ -92,6 +113,10 @@ func (toks Tokens) Find(q string) (Tokens, error) {
 	}
 
 	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
+}
+
+func (toks Tokens) Without(sw Tokens) Tokens {
+	return lo.Without(toks, sw...)
 }
 
 func (toks Tokens) Search(q string) (Tokens, error) {

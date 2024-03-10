@@ -31,7 +31,7 @@ func Keywords() *Analyzer {
 	return New(ToLower).Keywords()
 }
 
-func Normalize(opts ...Option) *Analyzer {
+func NewNormalizer(opts ...Option) *Analyzer {
 	ana := New(
 		ToLower,
 		WithoutPunct,
@@ -110,6 +110,14 @@ func (ana *Analyzer) RmStopWords() bool {
 func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 	ana.StopWords = words
 	return ana
+}
+
+func (ana *Analyzer) Stopwords() Tokens {
+	if !ana.RmStopWords() {
+		return Tokens{}
+	}
+	toks := Normalize(ana.StopWords, ana.normalizers)
+	return toks
 }
 
 func (ana *Analyzer) IsStopWord(token string) bool {

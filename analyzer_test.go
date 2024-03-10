@@ -110,7 +110,7 @@ func TestFuzzySearchNormalized(t *testing.T) {
 		`The quick, brown fox jumping! (And is running)`: 8,
 	}
 
-	ana := Normalize()
+	ana := NewNormalizer()
 	for test, want := range testStrings {
 		field, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
@@ -204,7 +204,7 @@ func TestAnalyzerNormalize(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := Normalize()
+	ana := NewNormalizer()
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
@@ -315,7 +315,7 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := Normalize()
+	ana := NewNormalizer()
 	ana.SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
@@ -345,7 +345,7 @@ func TestAnalyzerKitchenSink(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := Normalize(WithStemmer, WithDefaultStopWords)
+	ana := NewNormalizer(WithStemmer, WithDefaultStopWords)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
@@ -394,7 +394,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 func TestSortTokens(t *testing.T) {
 	test := `quick brown Fox`
 
-	ana := Normalize()
+	ana := NewNormalizer()
 	field, err := ana.Tokenize(test)
 	if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 		t.Error(err)
