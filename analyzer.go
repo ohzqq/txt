@@ -8,7 +8,7 @@ import (
 )
 
 type Analyzer struct {
-	StopWords   []string
+	stopWords   []string
 	sep         sep.Func
 	normalizers []Normalizer
 }
@@ -104,11 +104,11 @@ func (ana *Analyzer) Keywords() *Analyzer {
 }
 
 func (ana *Analyzer) RmStopWords() bool {
-	return len(ana.StopWords) > 0
+	return len(ana.stopWords) > 0
 }
 
 func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
-	ana.StopWords = words
+	ana.stopWords = words
 	return ana
 }
 
@@ -116,10 +116,10 @@ func (ana *Analyzer) Stopwords() Tokens {
 	if !ana.RmStopWords() {
 		return Tokens{}
 	}
-	toks := Normalize(ana.StopWords, ana.normalizers)
+	toks := Normalize(ana.stopWords, ana.normalizers)
 	return toks
 }
 
 func (ana *Analyzer) IsStopWord(token string) bool {
-	return slices.Contains(ana.StopWords, token)
+	return slices.Contains(ana.stopWords, token)
 }
