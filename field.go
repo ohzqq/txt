@@ -36,20 +36,12 @@ func (f *Field) FindByIndex(ti ...int) (Tokens, error) {
 	return f.Tokens.FindByIndex(ti)
 }
 
-func (f *Field) Sort(order ...string) Tokens {
-	o := "asc"
-	if len(order) > 0 {
-		o = order[0]
-	}
-	return f.Tokens.Sort(o)
+func (f *Field) AlphaAsc() Tokens {
+	return f.Tokens.AlphaAsc()
 }
 
-func (f *Field) Asc() Tokens {
-	return f.Tokens.Asc()
-}
-
-func (f *Field) Desc() Tokens {
-	return f.Tokens.Desc()
+func (f *Field) AlphaDesc() Tokens {
+	return f.Tokens.AlphaDesc()
 }
 
 func (toks *Field) String(i int) string {

@@ -166,21 +166,21 @@ func (toks Tokens) Len() int {
 	return len(toks)
 }
 
-func (toks Tokens) Sort(order string) Tokens {
+func (toks Tokens) Sort(cmp func(a, b *Token) int, order string) Tokens {
 	tokens := toks
-	slices.SortStableFunc(tokens, SortByAlphaFunc)
+	slices.SortStableFunc(tokens, cmp)
 	if order == "desc" {
 		slices.Reverse(tokens)
 	}
 	return tokens
 }
 
-func (toks Tokens) Asc() Tokens {
-	return toks.Sort("asc")
+func (toks Tokens) AlphaAsc() Tokens {
+	return toks.Sort(SortByAlphaFunc, "asc")
 }
 
-func (toks Tokens) Desc() Tokens {
-	tokens := toks.Asc()
+func (toks Tokens) AlphaDesc() Tokens {
+	tokens := toks.AlphaAsc()
 	slices.Reverse(tokens)
 	return tokens
 }

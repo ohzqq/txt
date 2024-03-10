@@ -399,12 +399,12 @@ func TestSortTokens(t *testing.T) {
 	if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 		t.Error(err)
 	}
-	asc := field.Asc()
+	asc := field.AlphaAsc()
 	if asc[0].Label != "brown" {
 		t.Errorf("got %s, wanted %s\n", asc[0].Label, "brown")
 	}
 
-	desc := field.Desc()
+	desc := field.Tokens.Sort(SortByAlphaFunc, "desc")
 	if desc[0].Label != "quick" {
 		t.Errorf("got %s, wanted %s\n", desc[0].Label, "quick")
 	}
