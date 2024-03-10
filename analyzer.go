@@ -80,17 +80,29 @@ func (ana *Analyzer) AddNormalizer(normies ...Normalizer) *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) Tokenize(text string) (*Field, error) {
+func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
 	var (
-		f   = &Field{}
-		err error
+		toks   Tokens
+		tokens []string
 	)
-	f.Tokens, err = Tokenize(ana, text)
-	if err != nil {
-		return f, err
+
+	if text == "" {
+		return toks, EmptyStrErr
 	}
 
-	return f, nil
+	tokens = Split(text, ana.sep)
+
+	if len(tokens) == 0 {
+		return toks, FieldsFuncErr
+	}
+
+	if len(ana.normalizers) > 0 {
+		toks = Normalize(tokens, ana.normalizers)
+	}
+
+	toks = toks.Without(ana.Stopwords())
+
+	return toks, nil
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {

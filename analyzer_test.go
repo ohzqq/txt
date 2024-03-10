@@ -47,7 +47,7 @@ func TestKeywordAnalyzer(t *testing.T) {
 
 	ana := New().Keywords()
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -73,7 +73,7 @@ func TestFuzzySearch(t *testing.T) {
 	ana := New().Keywords()
 	//ana.Keywords()
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -152,7 +152,7 @@ func TestAnalyzerToLower(t *testing.T) {
 
 	ana := New(ToLower)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -177,7 +177,7 @@ func TestAnalyzerStripPunct(t *testing.T) {
 
 	ana := New(WithoutPunct)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -206,7 +206,7 @@ func TestAnalyzerNormalize(t *testing.T) {
 
 	ana := NewNormalizer()
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -231,7 +231,7 @@ func TestAnalyzerStem(t *testing.T) {
 
 	ana := New(WithStemmer)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -258,7 +258,7 @@ func TestAnalyzerStopWords(t *testing.T) {
 		WithStopWords(DefaultStopWords()),
 	)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -288,7 +288,7 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 	ana := New(WithoutPunct).
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -318,7 +318,7 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 	ana := NewNormalizer()
 	ana.SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -347,7 +347,7 @@ func TestAnalyzerKitchenSink(t *testing.T) {
 
 	ana := NewNormalizer(WithStemmer, WithDefaultStopWords)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -376,7 +376,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 
 	ana := New().WithSep(sep.Comma)
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
+		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 			t.Error(err)
 		}
@@ -399,12 +399,12 @@ func TestSortTokens(t *testing.T) {
 	if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
 		t.Error(err)
 	}
-	asc := field.AlphaAsc()
+	asc := field.SortAlphaAsc()
 	if asc[0].Label != "brown" {
 		t.Errorf("got %s, wanted %s\n", asc[0].Label, "brown")
 	}
 
-	desc := field.Tokens.Sort(SortByAlphaFunc, "desc")
+	desc := field.Sort(SortByAlphaFunc, "desc")
 	if desc[0].Label != "quick" {
 		t.Errorf("got %s, wanted %s\n", desc[0].Label, "quick")
 	}

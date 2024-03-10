@@ -20,6 +20,7 @@ type Tokens []*Token
 var (
 	FieldsFuncErr = errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
 	EmptyStrErr   = errors.New("empty string")
+	NoMatchErr    = errors.New(`no matches found`)
 )
 
 func NewToken(label, val string) *Token {
@@ -27,31 +28,6 @@ func NewToken(label, val string) *Token {
 		Value: val,
 		Label: label,
 	}
-}
-
-func Tokenize(ana *Analyzer, text string) (Tokens, error) {
-	var (
-		toks   Tokens
-		tokens []string
-	)
-
-	if text == "" {
-		return toks, EmptyStrErr
-	}
-
-	tokens = Split(text, ana.sep)
-
-	if len(tokens) == 0 {
-		return toks, FieldsFuncErr
-	}
-
-	if len(ana.normalizers) > 0 {
-		toks = Normalize(tokens, ana.normalizers)
-	}
-
-	toks = toks.Without(ana.Stopwords())
-
-	return toks, nil
 }
 
 func (toks Tokens) Find(q string) (Tokens, error) {
@@ -164,6 +140,14 @@ func (toks Tokens) SortStable(cmp func(a, b *Token) int, order string) Tokens {
 		slices.Reverse(tokens)
 	}
 	return tokens
+}
+
+func (toks Tokens) SortAlphaAsc() Tokens {
+	return toks.Sort(SortByAlphaFunc, "asc")
+}
+
+func (toks Tokens) SortAlphaDesc() Tokens {
+	return toks.Sort(SortByAlphaFunc, "desc")
 }
 
 func SortByAlphaFunc(a *Token, b *Token) int {
