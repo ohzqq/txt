@@ -1,8 +1,48 @@
 package txt
 
-import "github.com/kljensen/snowball/english"
+import (
+	"strings"
+
+	"github.com/kljensen/snowball/english"
+	"github.com/ohzqq/txt/sep"
+	"github.com/samber/lo"
+)
 
 type Normalizer func(string) string
+
+func Split(str string, s sep.Func) []string {
+	if s == nil {
+		return []string{str}
+	}
+	return strings.FieldsFunc(str, s)
+}
+
+func Normalize(ls []string, normies []Normalizer) Tokens {
+	toks := make(Tokens, len(ls))
+	for i, l := range ls {
+		t := normalize(l, normies)
+		toks[i] = NewToken(l, t)
+	}
+	return toks
+}
+
+func WithoutStopWords(toks Tokens, sw Tokens) Tokens {
+	return lo.Without(toks, sw...)
+}
+
+func normalizeSlice(ls []string, normies []Normalizer) []string {
+	for i, l := range ls {
+		ls[i] = normalize(l, normies)
+	}
+	return ls
+}
+
+func normalize(label string, normies []Normalizer) string {
+	for _, norm := range normies {
+		label = norm(label)
+	}
+	return label
+}
 
 func StripPunct(token string) string {
 	var s []byte

@@ -4,9 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 
-	"github.com/ohzqq/txt/sep"
 	"github.com/sahilm/fuzzy"
 	"github.com/samber/lo"
 )
@@ -54,40 +52,6 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 	toks = WithoutStopWords(toks, ana.Stopwords())
 
 	return toks, nil
-}
-
-func Split(str string, s sep.Func) []string {
-	if s == nil {
-		return []string{str}
-	}
-	return strings.FieldsFunc(str, s)
-}
-
-func Normalize(ls []string, normies []Normalizer) Tokens {
-	toks := make(Tokens, len(ls))
-	for i, l := range ls {
-		t := normalize(l, normies)
-		toks[i] = NewToken(l, t)
-	}
-	return toks
-}
-
-func WithoutStopWords(toks Tokens, sw Tokens) Tokens {
-	return lo.Without(toks, sw...)
-}
-
-func normalizeSlice(ls []string, normies []Normalizer) []string {
-	for i, l := range ls {
-		ls[i] = normalize(l, normies)
-	}
-	return ls
-}
-
-func normalize(label string, normies []Normalizer) string {
-	for _, norm := range normies {
-		label = norm(label)
-	}
-	return label
 }
 
 func newMatch(str string, idx int) fuzzy.Match {
