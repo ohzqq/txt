@@ -2,7 +2,6 @@ package txt
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/ohzqq/txt/sep"
 )
@@ -12,8 +11,6 @@ type Analyzer struct {
 	sep         sep.Func
 	normalizers []Normalizer
 }
-
-type Option func(*Analyzer)
 
 func New(opts ...Option) *Analyzer {
 	ana := &Analyzer{
@@ -40,34 +37,6 @@ func NewNormalizer(opts ...Option) *Analyzer {
 		opt(ana)
 	}
 	return ana
-}
-
-func WithStopWords(words []string) Option {
-	return func(ana *Analyzer) {
-		ana.SetStopWords(words)
-	}
-}
-
-func WithDefaultStopWords(ana *Analyzer) {
-	ana.SetStopWords(stopWords)
-}
-
-func ToLower(ana *Analyzer) {
-	ana.AddNormalizer(strings.ToLower)
-}
-
-func WithoutPunct(ana *Analyzer) {
-	ana.AddNormalizer(StripPunct)
-}
-
-func WithStemmer(ana *Analyzer) {
-	ana.AddNormalizer(Stem)
-}
-
-func WithNormalizers(n ...Normalizer) Option {
-	return func(ana *Analyzer) {
-		ana.AddNormalizer(n...)
-	}
 }
 
 func (ana *Analyzer) WithNormalizer(normies ...Normalizer) *Analyzer {
