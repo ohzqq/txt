@@ -3,6 +3,7 @@ package txt
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/sahilm/fuzzy"
@@ -79,6 +80,9 @@ func (toks Tokens) Find(q string) (Tokens, error) {
 	var tokens Tokens
 	for i, tok := range toks {
 		if tok.Value == q {
+			tok.Match = newMatch(tok.Value, i)
+			tokens = append(tokens, tok)
+		} else if tok.Label == q {
 			tok.Match = newMatch(tok.Label, i)
 			tokens = append(tokens, tok)
 		}
@@ -102,7 +106,6 @@ func (toks Tokens) Search(q string) (Tokens, error) {
 	if tokens.Len() > 0 {
 		return tokens, nil
 	}
-
 	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
 }
 
@@ -126,10 +129,71 @@ func (toks Tokens) FindByValue(val string) (*Token, error) {
 	return nil, fmt.Errorf("%w for val '%s'\n", NoMatchErr, val)
 }
 
+func (toks Tokens) FindByIndex(ti []int) (Tokens, error) {
+	var tokens Tokens
+	for _, tok := range ti {
+		if tok < toks.Len() {
+			tokens = append(tokens, toks[tok])
+		}
+	}
+	if tokens.Len() > 0 {
+		return tokens, nil
+	}
+	return nil, fmt.Errorf("%w for indices %v\n", NoMatchErr, ti)
+}
+
+func (toks Tokens) Values() []string {
+	vals := make([]string, toks.Len())
+	for i, tok := range toks {
+		vals[i] = tok.Value
+	}
+	return vals
+}
+
+func (toks Tokens) Labels() []string {
+	vals := make([]string, toks.Len())
+	for i, tok := range toks {
+		vals[i] = tok.Label
+	}
+	return vals
+}
+
 func (toks Tokens) String(i int) string {
 	return toks[i].Value
 }
 
 func (toks Tokens) Len() int {
 	return len(toks)
+}
+
+func (toks Tokens) Sort(order string) Tokens {
+	tokens := toks
+	slices.SortStableFunc(tokens, SortByAlphaFunc)
+	if order == "desc" {
+		slices.Reverse(tokens)
+	}
+	return tokens
+}
+
+func (toks Tokens) Asc() Tokens {
+	return toks.Sort("asc")
+}
+
+func (toks Tokens) Desc() Tokens {
+	tokens := toks.Asc()
+	slices.Reverse(tokens)
+	return tokens
+}
+
+func SortByAlphaFunc(a *Token, b *Token) int {
+	aL := strings.ToLower(a.Label)
+	bL := strings.ToLower(b.Label)
+	switch {
+	case aL > bL:
+		return 1
+	case aL == bL:
+		return 0
+	default:
+		return -1
+	}
 }

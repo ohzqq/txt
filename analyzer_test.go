@@ -121,7 +121,7 @@ func TestFuzzySearchNormalized(t *testing.T) {
 			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
 
-		m, err := field.FuzzyFind("ing")
+		m, err := field.Search("ing")
 		if err != nil && !errors.Is(err, NoMatchErr) {
 			t.Error(err)
 		}
@@ -388,6 +388,25 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 			}
 			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
+	}
+}
+
+func TestSortTokens(t *testing.T) {
+	test := `quick brown fox`
+
+	ana := Normalize()
+	field, err := ana.Tokenize(test)
+	if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+		t.Error(err)
+	}
+	asc := field.Asc()
+	if asc[0].Label != "brown" {
+		t.Errorf("got %s, wanted %s\n", asc[0].Label, "brown")
+	}
+
+	desc := field.Desc()
+	if desc[0].Label != "quick" {
+		t.Errorf("got %s, wanted %s\n", desc[0].Label, "quick")
 	}
 }
 
