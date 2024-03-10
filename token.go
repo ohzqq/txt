@@ -49,16 +49,9 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 		toks = Normalize(tokens, ana.normalizers)
 	}
 
-	toks = WithoutStopWords(toks, ana.Stopwords())
+	toks = toks.Without(ana.Stopwords())
 
 	return toks, nil
-}
-
-func newMatch(str string, idx int) fuzzy.Match {
-	return fuzzy.Match{
-		Str:   str,
-		Index: idx,
-	}
 }
 
 func (toks Tokens) Find(q string) (Tokens, error) {
@@ -181,5 +174,12 @@ func SortByAlphaFunc(a *Token, b *Token) int {
 		return 0
 	default:
 		return -1
+	}
+}
+
+func newMatch(str string, idx int) fuzzy.Match {
+	return fuzzy.Match{
+		Str:   str,
+		Index: idx,
 	}
 }

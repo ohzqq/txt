@@ -5,7 +5,6 @@ import (
 
 	"github.com/kljensen/snowball/english"
 	"github.com/ohzqq/txt/sep"
-	"github.com/samber/lo"
 )
 
 type Normalizer func(string) string
@@ -24,10 +23,6 @@ func Normalize(ls []string, normies []Normalizer) Tokens {
 		toks[i] = NewToken(l, t)
 	}
 	return toks
-}
-
-func WithoutStopWords(toks Tokens, sw Tokens) Tokens {
-	return lo.Without(toks, sw...)
 }
 
 func normalizeSlice(ls []string, normies []Normalizer) []string {
