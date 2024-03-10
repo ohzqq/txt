@@ -175,16 +175,6 @@ func (toks Tokens) Sort(cmp func(a, b *Token) int, order string) Tokens {
 	return tokens
 }
 
-func (toks Tokens) AlphaAsc() Tokens {
-	return toks.Sort(SortByAlphaFunc, "asc")
-}
-
-func (toks Tokens) AlphaDesc() Tokens {
-	tokens := toks.AlphaAsc()
-	slices.Reverse(tokens)
-	return tokens
-}
-
 func SortByAlphaFunc(a *Token, b *Token) int {
 	aL := strings.ToLower(a.Label)
 	bL := strings.ToLower(b.Label)

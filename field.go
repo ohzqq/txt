@@ -37,11 +37,11 @@ func (f *Field) FindByIndex(ti ...int) (Tokens, error) {
 }
 
 func (f *Field) AlphaAsc() Tokens {
-	return f.Tokens.AlphaAsc()
+	return f.Tokens.Sort(SortByAlphaFunc, "asc")
 }
 
 func (f *Field) AlphaDesc() Tokens {
-	return f.Tokens.AlphaDesc()
+	return f.Tokens.Sort(SortByAlphaFunc, "desc")
 }
 
 func (toks *Field) String(i int) string {
