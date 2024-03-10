@@ -168,7 +168,7 @@ func TestAnalyzerStripPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(AlphaNum)
+	ana := New(StripPunct)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -222,7 +222,7 @@ func TestAnalyzerStem(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(Stem)
+	ana := New(Stemmer)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -277,7 +277,7 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := New(AlphaNum).
+	ana := New(StripPunct).
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)

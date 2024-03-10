@@ -32,7 +32,7 @@ func Keywords() *Analyzer {
 func Normalize(opts ...Option) *Analyzer {
 	ana := New(
 		strings.ToLower,
-		AlphaNum,
+		StripPunct,
 	)
 	for _, opt := range opts {
 		opt(ana)
@@ -51,7 +51,13 @@ func WithDefaultStopWords(ana *Analyzer) {
 }
 
 func WithStemmer(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, Stem)
+	ana.normalizers = append(ana.normalizers, Stemmer)
+}
+
+func WithNormalizers(n ...Normalizer) Option {
+	return func(ana *Analyzer) {
+		ana.normalizers = append(ana.normalizers, Stemmer)
+	}
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
@@ -77,7 +83,7 @@ func (ana *Analyzer) IsStopWord(token string) bool {
 	return slices.Contains(ana.StopWords, token)
 }
 
-func AlphaNum(token string) string {
+func StripPunct(token string) string {
 	var s []byte
 	for _, b := range []byte(token) {
 		if ('a' <= b && b <= 'z') ||
@@ -89,7 +95,7 @@ func AlphaNum(token string) string {
 	return string(s)
 }
 
-func Stem(token string) string {
+func Stemmer(token string) string {
 	return english.Stem(token, false)
 }
 
