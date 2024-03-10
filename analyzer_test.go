@@ -392,7 +392,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 }
 
 func TestSortTokens(t *testing.T) {
-	test := `quick brown fox`
+	test := `quick brown Fox`
 
 	ana := Normalize()
 	field, err := ana.Tokenize(test)

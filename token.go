@@ -175,13 +175,20 @@ func (toks Tokens) Sort(cmp func(a, b *Token) int, order string) Tokens {
 	return tokens
 }
 
+func (toks Tokens) SortStable(cmp func(a, b *Token) int, order string) Tokens {
+	tokens := toks
+	slices.SortStableFunc(tokens, cmp)
+	if order == "desc" {
+		slices.Reverse(tokens)
+	}
+	return tokens
+}
+
 func SortByAlphaFunc(a *Token, b *Token) int {
-	aL := strings.ToLower(a.Label)
-	bL := strings.ToLower(b.Label)
 	switch {
-	case aL > bL:
+	case a.Value > b.Value:
 		return 1
-	case aL == bL:
+	case a.Value == b.Value:
 		return 0
 	default:
 		return -1
