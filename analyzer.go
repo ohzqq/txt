@@ -4,7 +4,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/kljensen/snowball/english"
 	"github.com/ohzqq/txt/sep"
 )
 
@@ -14,25 +13,28 @@ type Analyzer struct {
 	normalizers []Normalizer
 }
 
-type Normalizer func(string) string
-
 type Option func(*Analyzer)
 
-func New(normies ...Normalizer) *Analyzer {
-	return &Analyzer{
-		normalizers: normies,
-		sep:         sep.Whitespace,
+func New(opts ...Option) *Analyzer {
+	ana := &Analyzer{
+		sep: sep.Whitespace,
 	}
+
+	for _, opt := range opts {
+		opt(ana)
+	}
+
+	return ana
 }
 
 func Keywords() *Analyzer {
-	return New(strings.ToLower).Keywords()
+	return New(ToLower).Keywords()
 }
 
 func Normalize(opts ...Option) *Analyzer {
 	ana := New(
-		strings.ToLower,
-		StripPunct,
+		ToLower,
+		WithoutPunct,
 	)
 	for _, opt := range opts {
 		opt(ana)
@@ -50,13 +52,21 @@ func WithDefaultStopWords(ana *Analyzer) {
 	ana.StopWords = stopWords
 }
 
+func ToLower(ana *Analyzer) {
+	ana.normalizers = append(ana.normalizers, strings.ToLower)
+}
+
+func WithoutPunct(ana *Analyzer) {
+	ana.normalizers = append(ana.normalizers, StripPunct)
+}
+
 func WithStemmer(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, Stemmer)
+	ana.normalizers = append(ana.normalizers, Stem)
 }
 
 func WithNormalizers(n ...Normalizer) Option {
 	return func(ana *Analyzer) {
-		ana.normalizers = append(ana.normalizers, Stemmer)
+		ana.normalizers = append(ana.normalizers, Stem)
 	}
 }
 
@@ -81,77 +91,4 @@ func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 
 func (ana *Analyzer) IsStopWord(token string) bool {
 	return slices.Contains(ana.StopWords, token)
-}
-
-func StripPunct(token string) string {
-	var s []byte
-	for _, b := range []byte(token) {
-		if ('a' <= b && b <= 'z') ||
-			('A' <= b && b <= 'Z') ||
-			('0' <= b && b <= '9') {
-			s = append(s, b)
-		}
-	}
-	return string(s)
-}
-
-func Stemmer(token string) string {
-	return english.Stem(token, false)
-}
-
-func DefaultStopWords() []string {
-	return stopWords
-}
-
-var stopWords = []string{
-	"i",
-	"vol",
-	"what",
-	"which",
-	"who",
-	"whom",
-	"this",
-	"that",
-	"am",
-	"is",
-	"are",
-	"was",
-	"were",
-	"be",
-	"been",
-	"being",
-	"have",
-	"has",
-	"had",
-	"having",
-	"do",
-	"does",
-	"did",
-	"doing",
-	"a",
-	"an",
-	"the",
-	"and",
-	"but",
-	"if",
-	"or",
-	"because",
-	"as",
-	"of",
-	"at",
-	"by",
-	"for",
-	"with",
-	"into",
-	"to",
-	"from",
-	"then",
-	"when",
-	"where",
-	"why",
-	"how",
-	"no",
-	"not",
-	"than",
-	"too",
 }

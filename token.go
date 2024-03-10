@@ -23,6 +23,7 @@ func NewToken(label, val string) *Token {
 }
 
 func Tokenize(text string, opts ...Option) (Tokens, error) {
+	ana := New()
 	var (
 		toks   Tokens
 		tokens []string

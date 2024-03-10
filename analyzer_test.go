@@ -1,7 +1,6 @@
 package txt
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/ohzqq/txt/sep"
@@ -143,7 +142,7 @@ func TestAnalyzerToLower(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(strings.ToLower)
+	ana := New(ToLower)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -168,7 +167,7 @@ func TestAnalyzerStripPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(StripPunct)
+	ana := New(WithoutPunct)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -222,7 +221,7 @@ func TestAnalyzerStem(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 8,
 	}
 
-	ana := New(Stemmer)
+	ana := New(WithStemmer)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -247,8 +246,9 @@ func TestAnalyzerStopWords(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 6,
 	}
 
-	ana := New().
-		SetStopWords(DefaultStopWords())
+	ana := New(
+		WithStopWords(DefaultStopWords()),
+	)
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
 		if err != nil {
@@ -277,7 +277,7 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 5,
 	}
 
-	ana := New(StripPunct).
+	ana := New(WithoutPunct).
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := Tokenizes(ana, test)
