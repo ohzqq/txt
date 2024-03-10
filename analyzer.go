@@ -115,7 +115,7 @@ func (ana *Analyzer) Keywords() *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) RmStopWords() bool {
+func (ana *Analyzer) WithoutStopWords() bool {
 	return len(ana.stopWords) > 0
 }
 
@@ -125,7 +125,7 @@ func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 }
 
 func (ana *Analyzer) Stopwords() Tokens {
-	if !ana.RmStopWords() {
+	if !ana.WithoutStopWords() {
 		return Tokens{}
 	}
 	toks := Normalize(ana.stopWords, ana.normalizers)
