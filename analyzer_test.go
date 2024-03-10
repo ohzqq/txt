@@ -24,7 +24,7 @@ func TestDefaultAnalyzer(t *testing.T) {
 		if err != nil {
 			println(err.Error())
 		}
-		numToks := len(tokens)
+		numToks := tokens.Len()
 		if want != numToks {
 			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
 		}

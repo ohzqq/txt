@@ -80,8 +80,17 @@ func (ana *Analyzer) AddNormalizer(normies ...Normalizer) *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
-	return Tokenize(ana, text)
+func (ana *Analyzer) Tokenize(text string) (*Field, error) {
+	var (
+		f   = &Field{}
+		err error
+	)
+	f.Tokens, err = Tokenize(ana, text)
+	if err != nil {
+		return f, err
+	}
+
+	return f, nil
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
