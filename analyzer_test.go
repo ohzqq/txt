@@ -81,7 +81,7 @@ func TestFuzzySearch(t *testing.T) {
 		if want != numToks {
 			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
 		}
-		m, err := tokens.FuzzyFind("row")
+		m, err := tokens.Search("row")
 		if err != nil && !errors.Is(err, NoMatchErr) {
 			t.Error(err)
 		}

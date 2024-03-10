@@ -21,7 +21,7 @@ func (f *Field) Find(q string) (Tokens, error) {
 }
 
 func (f *Field) FuzzyFind(q string) (Tokens, error) {
-	return f.Tokens.FuzzyFind(q)
+	return f.Tokens.Search(q)
 }
 
 func (f *Field) FindByLabel(label string) (*Token, error) {

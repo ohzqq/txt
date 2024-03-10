@@ -84,7 +84,7 @@ func (toks Tokens) Find(q string) (Tokens, error) {
 	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
 }
 
-func (toks Tokens) FuzzyFind(q string) (Tokens, error) {
+func (toks Tokens) Search(q string) (Tokens, error) {
 	var tokens Tokens
 	for _, m := range fuzzy.FindFrom(q, toks) {
 		tok := toks[m.Index]
