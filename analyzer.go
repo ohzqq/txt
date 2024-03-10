@@ -1,7 +1,6 @@
 package txt
 
 import (
-	"errors"
 	"slices"
 	"strings"
 
@@ -15,11 +14,6 @@ type Analyzer struct {
 }
 
 type Option func(*Analyzer)
-
-var (
-	FieldsFuncErr = errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
-	EmptyStrErr   = errors.New("empty string")
-)
 
 func New(opts ...Option) *Analyzer {
 	ana := &Analyzer{

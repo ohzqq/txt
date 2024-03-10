@@ -1,6 +1,7 @@
 package txt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,11 @@ type Token struct {
 }
 
 type Tokens []*Token
+
+var (
+	FieldsFuncErr = errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
+	EmptyStrErr   = errors.New("empty string")
+)
 
 func NewToken(label, val string) *Token {
 	return &Token{
