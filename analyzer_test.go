@@ -1,6 +1,7 @@
 package txt
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ohzqq/txt/sep"
@@ -13,16 +14,17 @@ func TestDefaultAnalyzer(t *testing.T) {
 		`quick brown fox`:     3,
 		`QUICK BROWN FOX`:     3,
 		`the quick brown fox`: 4,
-		`the quick brown fox jumped and is running`:     8,
-		`the quick, brown fox jumped! (and is running)`: 8,
-		`The quick, brown fox jumped! (And is running)`: 8,
+		`the quick brown fox jumped and is running`:        8,
+		`the quick, brown fox jumped! (and is running)`:    8,
+		`The quick, brown fox jumped! (And is running)`:    8,
+		`The quick, brown fox jumped in! (And is running)`: 9,
 	}
 
 	ana := New()
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := tokens.Len()
 		if want != numToks {
@@ -46,8 +48,8 @@ func TestKeywordAnalyzer(t *testing.T) {
 	ana := New().Keywords()
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -72,14 +74,17 @@ func TestFuzzySearch(t *testing.T) {
 	//ana.Keywords()
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
 			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
 		}
-		m := tokens.FuzzyFind("row")
+		m, err := tokens.FuzzyFind("row")
+		if err != nil && !errors.Is(err, NoMatchErr) {
+			t.Error(err)
+		}
 		switch test {
 		case ``, `!@@#$$%%^`:
 			if m.Len() != 0 {
@@ -107,16 +112,19 @@ func TestFuzzySearchNormalized(t *testing.T) {
 
 	ana := Normalize()
 	for test, want := range testStrings {
-		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		field, err := ana.Tokenize(test)
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
-		numToks := len(tokens)
+		numToks := field.Len()
 		if want != numToks {
 			t.Errorf("%s: got %d tokens, wanted %d\n", test, numToks, want)
 		}
 
-		m := tokens.FuzzyFind("ing")
+		m, err := field.FuzzyFind("ing")
+		if err != nil && !errors.Is(err, NoMatchErr) {
+			t.Error(err)
+		}
 		switch test {
 		case `the quick brown fox jumped and is running`, `the quick, brown fox jumped! (and is running)`:
 			if m.Len() != 1 {
@@ -145,8 +153,8 @@ func TestAnalyzerToLower(t *testing.T) {
 	ana := New(ToLower)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -170,8 +178,8 @@ func TestAnalyzerStripPunct(t *testing.T) {
 	ana := New(WithoutPunct)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -199,8 +207,8 @@ func TestAnalyzerNormalize(t *testing.T) {
 	ana := Normalize()
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -224,8 +232,8 @@ func TestAnalyzerStem(t *testing.T) {
 	ana := New(WithStemmer)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -251,8 +259,8 @@ func TestAnalyzerStopWords(t *testing.T) {
 	)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -281,8 +289,8 @@ func TestAnalyzerStopWordsNoPunct(t *testing.T) {
 		SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -311,8 +319,8 @@ func TestAnalyzerStopWordsNormalize(t *testing.T) {
 	ana.SetStopWords(DefaultStopWords())
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -340,8 +348,8 @@ func TestAnalyzerKitchenSink(t *testing.T) {
 	ana := Normalize(WithStemmer, WithDefaultStopWords)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {
@@ -369,8 +377,8 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 	ana := New().WithSep(sep.Comma)
 	for test, want := range testStrings {
 		tokens, err := Tokenize(ana, test)
-		if err != nil {
-			println(err.Error())
+		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {
+			t.Error(err)
 		}
 		numToks := len(tokens)
 		if want != numToks {

@@ -1,7 +1,7 @@
 package txt
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/sahilm/fuzzy"
@@ -28,6 +28,10 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 		tokens []string
 	)
 
+	if text == "" {
+		return toks, EmptyStrErr
+	}
+
 	if ana.sep == nil {
 		tokens = []string{text}
 	} else {
@@ -35,7 +39,7 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 	}
 
 	if len(tokens) == 0 {
-		return toks, errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
+		return toks, FieldsFuncErr
 	}
 
 	for _, label := range tokens {
@@ -58,21 +62,29 @@ func Tokenize(ana *Analyzer, text string) (Tokens, error) {
 	return toks, nil
 }
 
-func (toks Tokens) Find(q string) Tokens {
+func newMatch(str string, idx int) fuzzy.Match {
+	return fuzzy.Match{
+		Str:   str,
+		Index: idx,
+	}
+}
+
+func (toks Tokens) Find(q string) (Tokens, error) {
 	var tokens Tokens
 	for i, tok := range toks {
 		if tok.Value == q {
-			tok.Match = fuzzy.Match{
-				Index: i,
-				Str:   tok.Label,
-			}
+			tok.Match = newMatch(tok.Label, i)
 			tokens = append(tokens, tok)
 		}
 	}
-	return tokens
+	if tokens.Len() > 0 {
+		return tokens, nil
+	}
+
+	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
 }
 
-func (toks Tokens) FuzzyFind(q string) Tokens {
+func (toks Tokens) FuzzyFind(q string) (Tokens, error) {
 	var tokens Tokens
 	for _, m := range fuzzy.FindFrom(q, toks) {
 		tok := toks[m.Index]
@@ -80,7 +92,32 @@ func (toks Tokens) FuzzyFind(q string) Tokens {
 		tok.Match.Str = tok.Label
 		tokens = append(tokens, tok)
 	}
-	return tokens
+
+	if tokens.Len() > 0 {
+		return tokens, nil
+	}
+
+	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
+}
+
+func (toks Tokens) FindByLabel(label string) (*Token, error) {
+	for i, token := range toks {
+		if token.Label == label {
+			token.Match = newMatch(token.Label, i)
+			return token, nil
+		}
+	}
+	return nil, fmt.Errorf("%w for label '%s'\n", NoMatchErr, label)
+}
+
+func (toks Tokens) FindByValue(val string) (*Token, error) {
+	for i, token := range toks {
+		if token.Value == val {
+			token.Match = newMatch(token.Value, i)
+			return token, nil
+		}
+	}
+	return nil, fmt.Errorf("%w for val '%s'\n", NoMatchErr, val)
 }
 
 func (toks Tokens) String(i int) string {
