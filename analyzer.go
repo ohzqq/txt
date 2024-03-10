@@ -49,25 +49,39 @@ func WithStopWords(words []string) Option {
 }
 
 func WithDefaultStopWords(ana *Analyzer) {
-	ana.StopWords = stopWords
+	ana.SetStopWords(stopWords)
 }
 
 func ToLower(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, strings.ToLower)
+	ana.AddNormalizer(strings.ToLower)
 }
 
 func WithoutPunct(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, StripPunct)
+	ana.AddNormalizer(StripPunct)
 }
 
 func WithStemmer(ana *Analyzer) {
-	ana.normalizers = append(ana.normalizers, Stem)
+	ana.AddNormalizer(Stem)
 }
 
 func WithNormalizers(n ...Normalizer) Option {
 	return func(ana *Analyzer) {
-		ana.normalizers = append(ana.normalizers, Stem)
+		ana.AddNormalizer(n...)
 	}
+}
+
+func (ana *Analyzer) WithNormalizer(normies ...Normalizer) *Analyzer {
+	ana.normalizers = normies
+	return ana
+}
+
+func (ana *Analyzer) AddNormalizer(normies ...Normalizer) *Analyzer {
+	ana.normalizers = append(ana.normalizers, normies...)
+	return ana
+}
+
+func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
+	return Tokenize(ana, text)
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
