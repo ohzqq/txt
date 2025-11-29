@@ -4,11 +4,23 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
+	"github.com/samber/lo"
 	"golang.org/x/exp/shiny/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/inconsolata"
+	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
 const elipsis = `...`
+
+var (
+	GoMono      = gomono.TTF
+	GoRegular   = goregular.TTF
+	Inconsolata = inconsolata.Regular8x16
+)
 
 func WrapToString(text string, w int) string {
 	return strings.Join(WrapToSlice(text, w), "\n")
@@ -23,14 +35,85 @@ func WrapAndChunk(str string, w, lh int) [][]string {
 	return slice.Chunk(split(str, w), lh)
 }
 
-func Textbox(str string, pxSize, pxWidth int) []string {
+type WrapText struct {
+	FontSize int
+	Width    int
+	DPI      int
+	MaxLines int
+	Font     font.Face
+}
+
+type Box struct {
+	*WrapText
+	Pages [][]string
+}
+
+func NewBox(text string, wr *WrapText) *Box {
+	box := &Box{
+		WrapText: wr,
+	}
+	box.Pages = box.Paginate(text)
+	return box
+}
+
+func NewTextWrapper() *WrapText {
+	box := &WrapText{
+		Font:     NewFont(),
+		FontSize: 16,
+		DPI:      72,
+		MaxLines: 3,
+	}
+	return box
+}
+
+func (box *WrapText) WrapText(text string) []string {
+	return WrapLines(text, box.Font, box.Width)
+}
+
+func (box *WrapText) Paginate(text string) [][]string {
+	lines := box.WrapText(text)
+	if box.MaxLines <= 0 {
+		return [][]string{lines}
+	}
+	return lo.Chunk(lines, box.MaxLines)
+}
+
+func (box *WrapText) SetMaxLines(m int) *WrapText {
+	box.MaxLines = m
+	return box
+}
+
+func (box *WrapText) SetWidth(w int) *WrapText {
+	box.Width = w
+	return box
+}
+
+func (box *WrapText) SetFont(face font.Face) *WrapText {
+	box.Font = face
+	return box
+}
+
+func (box *WrapText) WithTTF(src []byte) error {
+	opts := &opentype.FaceOptions{
+		Size:    float64(box.FontSize),
+		DPI:     float64(box.DPI),
+		Hinting: font.HintingNone,
+	}
+	f, err := NewTTFSrc(src, opts)
+	if err != nil {
+		return err
+	}
+	box.Font = f
+	return nil
+}
+
+func WrapLines(str string, face font.Face, pxWidth int) []string {
 	var f text.Frame
-	f.SetFace(NewFont(pxSize))
+	f.SetFace(face)
 	f.SetMaxWidth(fixed.I(pxWidth))
 	c := f.NewCaret()
 	c.WriteString(str)
 	c.Close()
-
 	txt := wrapBox(&f)
 	return txt
 }
@@ -47,61 +130,4 @@ func wrapBox(f *text.Frame) []string {
 		}
 	}
 	return txt
-}
-
-// borrowed from https://gist.github.com/AmrSaber/2468f546fb67dc31576a14e1209870e6
-func split(str string, size int) []string {
-	if size < 1 {
-		return []string{}
-	}
-
-	str = strings.TrimSpace(str)
-
-	start := 0
-	chunks := make([]string, 0, len(str)/size)
-
-	for start < len(str) {
-		end := start + size
-		if end >= len(str) {
-			chunks = append(chunks, str[start:])
-			break
-		}
-
-		// If the next character is a delimiter, take it
-		// this is to avoid adding "-" at the end when the next character is a delimiter anyway
-		next := str[end]
-		if next == ' ' || next == '\n' {
-			end++
-		}
-
-		chunk := str[start:end]
-		cutWord := false
-
-		// Try to find a new line within the limit
-		length := strings.LastIndex(chunk, "\n")
-
-		// If no new line found, try to find a space
-		if length == -1 {
-			length = strings.LastIndex(chunk, " ")
-
-			// If no space found, then just split the text
-			if length == -1 {
-				length = len(chunk) - 1 // leave space for "-" character that will be appended
-				cutWord = true
-			}
-		}
-
-		chunk = chunk[:length]
-		start += length
-		if cutWord {
-			chunk += "-"
-		} else {
-			// Ignore the space that we stopped at
-			start++
-		}
-
-		chunks = append(chunks, chunk)
-	}
-
-	return chunks
 }
