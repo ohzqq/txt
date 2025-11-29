@@ -19,4 +19,9 @@ func TestWrapToSliceChunk(t *testing.T) {
 	}
 }
 
-const tstStr = `My stepdad Derek married my dad when I was 9 years old. Now I'm 13, so we've spent a decent amount of time together. He's a good guy. My dad isn't part of the picture, so it's been nice to have Derek around.`
+func TestTextbox(t *testing.T) {
+	lines := Textbox(tstStr, 16, 250)
+	fmt.Printf("%#v\n", lines)
+}
+
+const tstStr = "My stepdad Derek married my dad when I was 9 years old. Now I'm 13, so we've spent a decent amount of time together. He's a good guy. My dad isn't part of the picture, so it's been nice to have Derek around."

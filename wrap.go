@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/slice"
+	"golang.org/x/exp/shiny/text"
+	"golang.org/x/image/math/fixed"
 )
 
 const elipsis = `...`
@@ -19,6 +21,32 @@ func WrapToSlice(str string, w int) []string {
 
 func WrapAndChunk(str string, w, lh int) [][]string {
 	return slice.Chunk(split(str, w), lh)
+}
+
+func Textbox(str string, pxSize, pxWidth int) []string {
+	var f text.Frame
+	f.SetFace(NewFont(pxSize))
+	f.SetMaxWidth(fixed.I(pxWidth))
+	c := f.NewCaret()
+	c.WriteString(str)
+	c.Close()
+
+	txt := wrapBox(&f)
+	return txt
+}
+
+func wrapBox(f *text.Frame) []string {
+	txt := []string{}
+	for p := f.FirstParagraph(); p != nil; p = p.Next(f) {
+		for l := p.FirstLine(f); l != nil; l = l.Next(f) {
+			line := []string{}
+			for b := l.FirstBox(f); b != nil; b = b.Next(f) {
+				line = append(line, string(b.TrimmedText(f)))
+			}
+			txt = append(txt, strings.Join(line, " "))
+		}
+	}
+	return txt
 }
 
 // borrowed from https://gist.github.com/AmrSaber/2468f546fb67dc31576a14e1209870e6
