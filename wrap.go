@@ -3,6 +3,7 @@ package txt
 import (
 	"strings"
 
+	"github.com/ohzqq/pages"
 	"golang.org/x/exp/shiny/text"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -75,6 +76,10 @@ func (wr *Wrapper) WrapText(str string) []string {
 	lines, h := wrapBox(&f)
 	wr.LineHeight = h
 	return lines
+}
+
+func (wr *Wrapper) Paginate(txt string) *pages.Pages[string] {
+	return newPaginator(wr.WrapText(txt), wr.LinesPerPage())
 }
 
 func (pg *Wrapper) LinesPerPage() int {

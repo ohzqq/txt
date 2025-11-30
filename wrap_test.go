@@ -24,4 +24,13 @@ func TestTextWrap(t *testing.T) {
 	fmt.Printf("%#v\n", totalLines)
 }
 
+func TestPagination(t *testing.T) {
+	box := NewWrapper(WithGoMono(22))
+	box.
+		SetFontSize(30).
+		SetWidth(250)
+	pages := box.Paginate(tstStr)
+	fmt.Printf("%#v\n", pages.AllPages())
+}
+
 const tstStr = "My stepdad Derek married my dad when I was 9 years old. Now I'm 13, so we've spent a decent amount of time together. He's a good guy. My dad isn't part of the picture, so it's been nice to have Derek around."
