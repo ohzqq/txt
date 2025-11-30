@@ -11,9 +11,7 @@ import (
 
 const elipsis = `...`
 
-type TextWrapper interface {
-	WrapText(text string) ([]string, int)
-}
+type WrapOpt func(w *Wrapper)
 
 type Wrapper struct {
 	FontSize   int
@@ -26,19 +24,64 @@ type Wrapper struct {
 	Simple     bool
 }
 
-type SimpleTextWrapper struct {
-	Width int
-}
-
-func NewWrapper() *Wrapper {
-	box := &Wrapper{
-		Font:     DefaultFont,
+func NewWrapper(opts ...WrapOpt) *Wrapper {
+	wr := &Wrapper{
 		Width:    250,
 		FontSize: 16,
 		DPI:      72,
 		MaxLines: 1,
 	}
-	return box
+	for _, opt := range opts {
+		opt(wr)
+	}
+	return wr
+}
+
+func SimpleWrap(txt string, w, maxLines int) ([]string, int) {
+	wr := &Wrapper{
+		Width:    w,
+		MaxLines: maxLines,
+		Simple:   true,
+	}
+	return wr.WrapText(txt), wr.LinesPerPage()
+}
+
+func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
+	wr := NewWrapper(opts...)
+	if wr.Font == nil {
+		wr.Font = Inconsolata
+	}
+	return wr.WrapText(txt), wr.LinesPerPage()
+}
+
+func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
+	wr := NewWrapper(opts...)
+	if wr.Font == nil {
+		wr.Font = Inconsolata
+	}
+	wr.Width = w
+	wr.Height = h
+	return wr.WrapText(txt), wr.LinesPerPage()
+}
+
+func (wr *Wrapper) SimpleWrap(str string) []string {
+	wr.Simple = true
+	return wr.WrapText(str)
+}
+
+func (wr *Wrapper) WrapText(str string) []string {
+	if wr.Simple == true {
+		return simpleWrap(str, wr.Width)
+	}
+	var f text.Frame
+	f.SetFace(wr.Font)
+	f.SetMaxWidth(fixed.I(wr.Width))
+	c := f.NewCaret()
+	c.WriteString(str)
+	c.Close()
+	lines, h := wrapBox(&f)
+	wr.LineHeight = h
+	return lines
 }
 
 func (pg *Wrapper) LinesPerPage() int {
@@ -58,6 +101,12 @@ func (wr *Wrapper) SetFontSize(fs int) *Wrapper {
 
 func (wr *Wrapper) SetWidth(w int) *Wrapper {
 	wr.Width = w
+	return wr
+}
+
+func (wr *Wrapper) SetSize(w, h int) *Wrapper {
+	wr.Width = w
+	wr.Height = h
 	return wr
 }
 
@@ -81,14 +130,45 @@ func (pg *Wrapper) SetHeight(m int) *Wrapper {
 	return pg
 }
 
-func (wr *Wrapper) WithGoMono() *Wrapper {
-	f, _ := NewTTF(GoMono, wr.opentypeOpts())
-	return wr.SetFont(f)
+func (wr *Wrapper) WithTTF(src []byte, fs int) error {
+	wr.SetFontSize(fs)
+	f, err := NewTTF(src, wr.opentypeOpts())
+	if err != nil {
+		return err
+	}
+	wr.SetFont(f)
+	return nil
 }
 
-func (wr *Wrapper) WithGoRegular() *Wrapper {
-	f, _ := NewTTF(GoRegular, wr.opentypeOpts())
-	return wr.SetFont(f)
+func WithSize(w, h int) WrapOpt {
+	return func(wr *Wrapper) {
+		wr.Width = w
+		wr.Height = h
+	}
+}
+
+func WithMaxLines(maxLines int) WrapOpt {
+	return func(wr *Wrapper) {
+		wr.MaxLines = maxLines
+	}
+}
+
+func WithFont(face font.Face) WrapOpt {
+	return func(wr *Wrapper) {
+		wr.SetFont(face)
+	}
+}
+
+func WithGoMono(fs int) WrapOpt {
+	return func(wr *Wrapper) {
+		wr.WithTTF(GoMono, fs)
+	}
+}
+
+func WithGoRegular(fs int) WrapOpt {
+	return func(wr *Wrapper) {
+		wr.WithTTF(GoRegular, fs)
+	}
 }
 
 func (wr *Wrapper) opentypeOpts() *opentype.FaceOptions {
@@ -97,31 +177,6 @@ func (wr *Wrapper) opentypeOpts() *opentype.FaceOptions {
 		DPI:     float64(wr.DPI),
 		Hinting: font.HintingNone,
 	}
-}
-
-func (wr *Wrapper) WithTTF(src []byte) error {
-	f, err := NewTTF(src, wr.opentypeOpts())
-	if err != nil {
-		return err
-	}
-	wr.Font = f
-	return nil
-}
-
-func (wr *Wrapper) SimpleWrap(str string) []string {
-	return split(str, wr.Width)
-}
-
-func (wr *Wrapper) WrapText(str string) []string {
-	var f text.Frame
-	f.SetFace(wr.Font)
-	f.SetMaxWidth(fixed.I(wr.Width))
-	c := f.NewCaret()
-	c.WriteString(str)
-	c.Close()
-	lines, h := wrapBox(&f)
-	wr.LineHeight = h
-	return lines
 }
 
 func wrapBox(f *text.Frame) ([]string, int) {
@@ -140,16 +195,8 @@ func wrapBox(f *text.Frame) ([]string, int) {
 	return txt, height
 }
 
-func NewSimpleTextWrapper(w int) *SimpleTextWrapper {
-	return &SimpleTextWrapper{Width: w}
-}
-
-func (wr *SimpleTextWrapper) WrapText(str string) ([]string, int) {
-	return split(str, wr.Width), 1
-}
-
 // borrowed from https://gist.github.com/AmrSaber/2468f546fb67dc31576a14e1209870e6
-func split(str string, size int) []string {
+func simpleWrap(str string, size int) []string {
 	if size < 1 {
 		return []string{}
 	}
