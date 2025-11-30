@@ -4,27 +4,9 @@ import (
 	"testing"
 )
 
-func TestVariableTextWrapperPaginator(t *testing.T) {
-	wr := NewTextWrapper()
-	wr.
-		SetFontSize(12).
-		SetWidth(250).
-		WithGoMono()
-	box := NewPaginator(wr).SetHeight(90)
-	pages := box.Paginate(tstStr)
-	pages.SetLoop(false)
-}
-
-func TestSimplePaginator(t *testing.T) {
-	wr := NewSimpleTextWrapper(250)
-	pagy := NewPaginator(wr).SetMaxLines(3)
-	pages := pagy.Paginate(tstStr)
-	println(pages.CurrentPage())
-}
-
 func TestTextWrap(t *testing.T) {
 	//lines := NewFrame(tstStr, 26, 250)
-	box := NewTextWrapper()
+	box := NewWrapper()
 	box.
 		SetFontSize(2).
 		SetWidth(250).

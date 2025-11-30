@@ -3,7 +3,6 @@ package txt
 import (
 	"strings"
 
-	"github.com/samber/lo"
 	"golang.org/x/exp/shiny/text"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -16,143 +15,83 @@ type TextWrapper interface {
 	WrapText(text string) ([]string, int)
 }
 
-type VariableTextWrapper struct {
-	FontSize int
-	Width    int
-	DPI      int
-	Font     font.Face
-}
-
-type Paginator struct {
-	wr         TextWrapper
+type Wrapper struct {
+	FontSize   int
+	Width      int
+	DPI        int
 	MaxLines   int
-	LineHeight int
 	Height     int
+	LineHeight int
+	Font       font.Face
+	Simple     bool
 }
 
-type Pages struct {
-	Pages  [][]string
-	cur    int
-	Loop   bool
-	Height int
-	Width  int
+type SimpleTextWrapper struct {
+	Width int
 }
 
-func NewPages(pages [][]string) *Pages {
-	return &Pages{
-		Pages: pages,
-		Loop:  true,
-	}
-}
-
-func NewPaginator(wr TextWrapper) *Paginator {
-	box := &Paginator{
-		wr:       wr,
-		MaxLines: 5,
-	}
-	return box
-}
-
-func (pg *Paginator) SetMaxLines(m int) *Paginator {
-	pg.MaxLines = m
-	return pg
-}
-
-func (pg *Paginator) SetLineHeight(m int) *Paginator {
-	pg.LineHeight = m
-	return pg
-}
-
-func (pg *Paginator) SetHeight(m int) *Paginator {
-	pg.Height = m
-	return pg
-}
-
-func (pg *Paginator) Paginate(text string) *Pages {
-	lines, height := pg.wr.WrapText(text)
-	pg.LineHeight = height
-	if pg.MaxLines <= 0 {
-		return NewPages([][]string{lines})
-	}
-	if pg.Height > 0 {
-		pg.MaxLines = pg.Height / height
-	}
-	return NewPages(lo.Chunk(lines, pg.MaxLines))
-}
-
-func (pg *Pages) SetLoop(loop bool) *Pages {
-	pg.Loop = loop
-	return pg
-}
-
-func (pg *Pages) CurrentLines() []string {
-	return pg.Pages[pg.cur]
-}
-
-func (pg *Pages) CurrentPage() string {
-	return strings.Join(pg.CurrentLines(), "\n")
-}
-
-func (pg *Pages) NextPage() string {
-	pg.cur++
-	if pg.cur >= len(pg.Pages) {
-		if pg.Loop {
-			pg.cur = 0
-		} else {
-			pg.cur = len(pg.Pages) - 1
-		}
-	}
-	return pg.CurrentPage()
-}
-
-func (pg *Pages) PrevPage() string {
-	pg.cur--
-	if pg.cur < 0 {
-		if pg.Loop {
-			pg.cur = len(pg.Pages) - 1
-		} else {
-			pg.cur = 0
-		}
-	}
-	return pg.CurrentPage()
-}
-
-func NewTextWrapper() *VariableTextWrapper {
-	box := &VariableTextWrapper{
+func NewWrapper() *Wrapper {
+	box := &Wrapper{
 		Font:     DefaultFont,
 		Width:    250,
 		FontSize: 16,
 		DPI:      72,
+		MaxLines: 1,
 	}
 	return box
 }
 
-func (wr *VariableTextWrapper) SetFontSize(fs int) *VariableTextWrapper {
+func (pg *Wrapper) LinesPerPage() int {
+	if pg.Height > 0 {
+		return pg.Height / pg.LineHeight
+	}
+	if pg.MaxLines > 1 {
+		return pg.MaxLines
+	}
+	return 1
+}
+
+func (wr *Wrapper) SetFontSize(fs int) *Wrapper {
 	wr.FontSize = fs
 	return wr
 }
 
-func (wr *VariableTextWrapper) SetWidth(w int) *VariableTextWrapper {
+func (wr *Wrapper) SetWidth(w int) *Wrapper {
 	wr.Width = w
 	return wr
 }
 
-func (wr *VariableTextWrapper) SetFont(face font.Face) *VariableTextWrapper {
+func (wr *Wrapper) SetFont(face font.Face) *Wrapper {
 	wr.Font = face
 	return wr
 }
 
-func (wr *VariableTextWrapper) WithGoMono() *VariableTextWrapper {
+func (pg *Wrapper) SetMaxLines(m int) *Wrapper {
+	pg.MaxLines = m
+	return pg
+}
+
+func (pg *Wrapper) SetLineHeight(m int) *Wrapper {
+	pg.LineHeight = m
+	return pg
+}
+
+func (pg *Wrapper) SetHeight(m int) *Wrapper {
+	pg.Height = m
+	return pg
+}
+
+func (wr *Wrapper) WithGoMono() *Wrapper {
 	f, _ := NewTTF(GoMono, wr.opentypeOpts())
 	return wr.SetFont(f)
 }
 
-func (wr *VariableTextWrapper) WithGoRegular() *VariableTextWrapper {
+func (wr *Wrapper) WithGoRegular() *Wrapper {
 	f, _ := NewTTF(GoRegular, wr.opentypeOpts())
 	return wr.SetFont(f)
 }
 
-func (wr *VariableTextWrapper) opentypeOpts() *opentype.FaceOptions {
+func (wr *Wrapper) opentypeOpts() *opentype.FaceOptions {
 	return &opentype.FaceOptions{
 		Size:    float64(wr.FontSize),
 		DPI:     float64(wr.DPI),
@@ -160,7 +99,7 @@ func (wr *VariableTextWrapper) opentypeOpts() *opentype.FaceOptions {
 	}
 }
 
-func (wr *VariableTextWrapper) WithTTF(src []byte) error {
+func (wr *Wrapper) WithTTF(src []byte) error {
 	f, err := NewTTF(src, wr.opentypeOpts())
 	if err != nil {
 		return err
@@ -169,14 +108,20 @@ func (wr *VariableTextWrapper) WithTTF(src []byte) error {
 	return nil
 }
 
-func (wr *VariableTextWrapper) WrapText(str string) ([]string, int) {
+func (wr *Wrapper) SimpleWrap(str string) []string {
+	return split(str, wr.Width)
+}
+
+func (wr *Wrapper) WrapText(str string) []string {
 	var f text.Frame
 	f.SetFace(wr.Font)
 	f.SetMaxWidth(fixed.I(wr.Width))
 	c := f.NewCaret()
 	c.WriteString(str)
 	c.Close()
-	return wrapBox(&f)
+	lines, h := wrapBox(&f)
+	wr.LineHeight = h
+	return lines
 }
 
 func wrapBox(f *text.Frame) ([]string, int) {
@@ -193,10 +138,6 @@ func wrapBox(f *text.Frame) ([]string, int) {
 		}
 	}
 	return txt, height
-}
-
-type SimpleTextWrapper struct {
-	Width int
 }
 
 func NewSimpleTextWrapper(w int) *SimpleTextWrapper {
