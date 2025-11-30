@@ -1,4 +1,4 @@
-package txt
+package main
 
 import (
 	"golang.org/x/image/font"

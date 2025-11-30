@@ -1,6 +1,6 @@
 //go:build ignore
 
-package txt
+package main
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package txt
+package main
 
 import (
 	"github.com/ohzqq/pages"
