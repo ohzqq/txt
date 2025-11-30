@@ -81,10 +81,10 @@ func (m *Paginator) GetSliceBounds(length int) (start int, end int) {
 // PrevPage is a helper function for navigating one page backward. It will not
 // page beyond the first page (i.e. page 0).
 func (m *Paginator) PrevPage() {
-	m.Page = m.prevPageNum()
+	m.Page = m.PrevPageNum()
 }
 
-func (m *Paginator) prevPageNum() int {
+func (m *Paginator) PrevPageNum() int {
 	prev := m.Page
 	prev--
 	if prev < 0 {
@@ -100,10 +100,10 @@ func (m *Paginator) prevPageNum() int {
 // NextPage is a helper function for navigating one page forward. It will not
 // page beyond the last page (i.e. totalPages - 1).
 func (m *Paginator) NextPage() {
-	m.Page = m.nextPageNum()
+	m.Page = m.NextPageNum()
 }
 
-func (m *Paginator) nextPageNum() int {
+func (m *Paginator) NextPageNum() int {
 	next := m.Page
 	if !m.OnLastPage() {
 		next++
@@ -137,6 +137,13 @@ func NewPaginator(opts ...Option) Paginator {
 		opt(&m)
 	}
 	return m
+}
+
+// WithLooping sets pagination to loop.
+func WithLooping(loop bool) Option {
+	return func(m *Paginator) {
+		m.Loop = loop
+	}
 }
 
 // WithTotalPages sets the total pages.
