@@ -146,13 +146,6 @@ func WithLooping(loop bool) Option {
 	}
 }
 
-// WithTotalPages sets the total pages.
-func WithTotalPages(totalPages int) Option {
-	return func(m *Paginator) {
-		m.TotalPages = totalPages
-	}
-}
-
 // WithPerPage sets the total pages.
 func WithPerPage(perPage int) Option {
 	return func(m *Paginator) {
