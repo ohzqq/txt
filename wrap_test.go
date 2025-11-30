@@ -1,27 +1,25 @@
 package txt
 
 import (
-	"fmt"
 	"testing"
 )
 
-func TestBox(t *testing.T) {
+func TestVariableTextWrapperPaginator(t *testing.T) {
 	wr := NewTextWrapper()
 	wr.
-		SetFontSize(26).
+		SetFontSize(12).
 		SetWidth(250).
 		WithGoMono()
 	box := NewPaginator(wr).SetHeight(90)
 	pages := box.Paginate(tstStr)
-	println(box.LineHeight)
 	pages.SetLoop(false)
-	fmt.Printf("cur page\n%v\n", pages.CurrentPage())
-	println(pages.cur)
-	fmt.Printf("Nexte\n%v\n", pages.NextPage())
-	println(pages.cur)
-	fmt.Printf("Prev\n%v\n", pages.PrevPage())
-	println(pages.cur)
-	fmt.Printf("Prev\n%v\n", pages.PrevPage())
+}
+
+func TestSimplePaginator(t *testing.T) {
+	wr := NewSimpleTextWrapper(250)
+	pagy := NewPaginator(wr).SetMaxLines(3)
+	pages := pagy.Paginate(tstStr)
+	println(pages.CurrentPage())
 }
 
 func TestTextWrap(t *testing.T) {
