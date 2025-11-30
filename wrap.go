@@ -62,11 +62,6 @@ func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
 	return wr.WrapText(txt), wr.LinesPerPage()
 }
 
-func (wr *Wrapper) SimpleWrap(str string) []string {
-	wr.Simple = true
-	return wr.WrapText(str)
-}
-
 func (wr *Wrapper) WrapText(str string) []string {
 	if wr.Simple == true {
 		return simpleWrap(str, wr.Width)
