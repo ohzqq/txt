@@ -9,8 +9,6 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-const elipsis = `...`
-
 type WrapOpt func(w *Wrapper)
 
 type Wrapper struct {
