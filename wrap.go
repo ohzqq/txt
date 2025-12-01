@@ -3,90 +3,70 @@ package txt
 import (
 	"strings"
 
-	"github.com/ohzqq/pages"
 	"golang.org/x/exp/shiny/text"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
-type WrapOpt func(w *Wrapper)
-
 type Wrapper struct {
-	*Font
-	FontSize   int
-	Width      int
-	DPI        int
 	MaxLines   int
-	Height     int
 	LineHeight int
+	Height     int
 	Simple     bool
 }
 
-func NewWrapper(opts ...WrapOpt) *Wrapper {
+func NewWrapper() *Wrapper {
 	wr := &Wrapper{
-		Width:    250,
-		FontSize: 16,
-		DPI:      72,
 		MaxLines: 1,
-	}
-	for _, opt := range opts {
-		opt(wr)
 	}
 	return wr
 }
 
-func SimpleWrap(txt string, w, maxLines int) ([]string, int) {
-	wr := &Wrapper{
-		Width:    w,
-		MaxLines: maxLines,
-		Simple:   true,
-	}
-	return wr.WrapText(txt), wr.LinesPerPage()
+//func SimpleWrap(txt string, w, maxLines int) ([]string, int) {
+//  wr := &Wrapper{
+//    Font: &Font{
+//      Width: 250,
+//    },
+//    MaxLines: maxLines,
+//    Simple:   true,
+//  }
+//  return wr.wrapText(txt), wr.LinesPerPage()
+//}
+
+//func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
+//  wr := NewWrapper(opts...)
+//  if wr.Font == nil {
+//    wr.Font = Inconsolata()
+//  }
+//  return wr.wrapText(txt), wr.LinesPerPage()
+//}
+
+//func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
+//  wr := NewWrapper(opts...)
+//  if wr.Font == nil {
+//    wr.Font = Inconsolata()
+//  }
+//  wr.Width = w
+//  wr.Height = h
+//  return wr.wrapText(txt), wr.LinesPerPage()
+//}
+
+func (wr *Wrapper) WrapBytes(byte []byte, font *Font) []string {
+	return wr.WrapText(string(byte), font)
 }
 
-func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
-	wr := NewWrapper(opts...)
-	if wr.Font == nil {
-		wr.Font = Inconsolata()
-	}
-	return wr.WrapText(txt), wr.LinesPerPage()
-}
-
-func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
-	wr := NewWrapper(opts...)
-	if wr.Font == nil {
-		wr.Font = Inconsolata()
-	}
-	wr.Width = w
-	wr.Height = h
-	return wr.WrapText(txt), wr.LinesPerPage()
-}
-
-func (wr *Wrapper) WrapBytes(byte []byte) []string {
-	return wr.WrapText(string(byte))
-}
-
-func (wr *Wrapper) WrapText(str string) []string {
-	if wr.Font == nil {
-		wr.Simple = true
-	}
+func (wr *Wrapper) WrapText(str string, font *Font) []string {
 	if wr.Simple == true {
-		return simpleWrap(str, wr.Width)
+		return simpleWrap(str, font.Width)
 	}
 	var f text.Frame
-	f.SetFace(wr.Font)
-	f.SetMaxWidth(fixed.I(wr.Width))
+	f.SetFace(font.Face)
+	f.SetMaxWidth(fixed.I(font.Width))
 	c := f.NewCaret()
 	c.WriteString(str)
 	c.Close()
 	lines, h := wrapBox(&f)
 	wr.LineHeight = h
 	return lines
-}
-
-func (wr *Wrapper) Paginate(txt string) *pages.Pages[string] {
-	return newPaginator(wr.WrapText(txt), wr.LinesPerPage())
 }
 
 func (pg *Wrapper) LinesPerPage() int {
@@ -99,27 +79,6 @@ func (pg *Wrapper) LinesPerPage() int {
 	return 1
 }
 
-func (wr *Wrapper) SetFontSize(fs int) *Wrapper {
-	wr.FontSize = fs
-	return wr
-}
-
-func (wr *Wrapper) SetWidth(w int) *Wrapper {
-	wr.Width = w
-	return wr
-}
-
-func (wr *Wrapper) SetSize(w, h int) *Wrapper {
-	wr.Width = w
-	wr.Height = h
-	return wr
-}
-
-func (wr *Wrapper) SetFont(face *Font) *Wrapper {
-	wr.Font = face
-	return wr
-}
-
 func (pg *Wrapper) SetMaxLines(m int) *Wrapper {
 	pg.MaxLines = m
 	return pg
@@ -128,60 +87,6 @@ func (pg *Wrapper) SetMaxLines(m int) *Wrapper {
 func (pg *Wrapper) SetLineHeight(m int) *Wrapper {
 	pg.LineHeight = m
 	return pg
-}
-
-func (pg *Wrapper) SetHeight(m int) *Wrapper {
-	pg.Height = m
-	return pg
-}
-
-func (wr *Wrapper) WithTTF(src []byte, fs int) error {
-	wr.SetFontSize(fs)
-	f, err := NewFont(src, wr.opentypeOpts())
-	if err != nil {
-		return err
-	}
-	wr.SetFont(f)
-	return nil
-}
-
-func WithSize(w, h int) WrapOpt {
-	return func(wr *Wrapper) {
-		wr.Width = w
-		wr.Height = h
-	}
-}
-
-func WithMaxLines(maxLines int) WrapOpt {
-	return func(wr *Wrapper) {
-		wr.MaxLines = maxLines
-	}
-}
-
-func WithFont(face *Font) WrapOpt {
-	return func(wr *Wrapper) {
-		wr.SetFont(face)
-	}
-}
-
-func WithGoMono(fs int) WrapOpt {
-	return func(wr *Wrapper) {
-		wr.WithTTF(goMono, fs)
-	}
-}
-
-func WithGoRegular(fs int) WrapOpt {
-	return func(wr *Wrapper) {
-		wr.WithTTF(goRegular, fs)
-	}
-}
-
-func (wr *Wrapper) opentypeOpts() *opentype.FaceOptions {
-	return &opentype.FaceOptions{
-		Size:    float64(wr.FontSize),
-		DPI:     float64(wr.DPI),
-		Hinting: font.HintingNone,
-	}
 }
 
 func wrapBox(f *text.Frame) ([]string, int) {

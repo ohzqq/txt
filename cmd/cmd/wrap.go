@@ -42,7 +42,7 @@ var wrapCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = wrapper.WithTTF(ttf, wrapper.FontSize)
+			err = wrapper.ParseTTF(ttf, wrapper.FontSize)
 			if err != nil {
 				log.Fatal(err)
 			}

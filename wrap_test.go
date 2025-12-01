@@ -8,7 +8,10 @@ import (
 func TestTextWrap(t *testing.T) {
 	//lines := NewFrame(tstStr, 26, 250)
 	//lines, totalLines := WrapFont(tstStr, WithGoMono(22), WithSize(250, 100))
-	lines, totalLines := WrapTextbox(tstStr, 250, 100, WithGoMono(22))
+	ff := NewFont(WithGoMono(22), WithLineWrap())
+	lines := ff.WrapText(tstStr)
+	linesPerPage := ff.LinesPerPage()
+	//lines, totalLines := WrapTextbox(tstStr, 250, 100)
 	//lines, totalLines := SimpleWrap(tstStr, 25, 4)
 	//box := NewWrapper()
 	//box.
@@ -21,15 +24,15 @@ func TestTextWrap(t *testing.T) {
 	//}
 	//lines := box.WrapText(tstStr)
 	fmt.Printf("total %v: %#v\n", len(lines), lines)
-	fmt.Printf("%#v\n", totalLines)
+	fmt.Printf("%#v\n", linesPerPage)
 }
 
 func TestPagination(t *testing.T) {
-	box := NewWrapper(WithGoMono(22))
-	box.
-		SetFontSize(30).
-		SetWidth(250)
-	pages := box.Paginate(tstStr)
+	pages := NewPaginator(tstStr,
+		WithGoMono(22),
+		WithFontSize(30),
+		WithSize(250, 300),
+	)
 	fmt.Printf("%#v\n", pages.AllPages())
 }
 
