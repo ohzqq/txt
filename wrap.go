@@ -15,40 +15,11 @@ type Wrapper struct {
 }
 
 func NewWrapper() *Wrapper {
-	wr := &Wrapper{
-		MaxLines: 1,
+	return &Wrapper{
+		MaxLines:   1,
+		LineHeight: 1,
 	}
-	return wr
 }
-
-//func SimpleWrap(txt string, w, maxLines int) ([]string, int) {
-//  wr := &Wrapper{
-//    Font: &Font{
-//      Width: 250,
-//    },
-//    MaxLines: maxLines,
-//    Simple:   true,
-//  }
-//  return wr.wrapText(txt), wr.LinesPerPage()
-//}
-
-//func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
-//  wr := NewWrapper(opts...)
-//  if wr.Font == nil {
-//    wr.Font = Inconsolata()
-//  }
-//  return wr.wrapText(txt), wr.LinesPerPage()
-//}
-
-//func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
-//  wr := NewWrapper(opts...)
-//  if wr.Font == nil {
-//    wr.Font = Inconsolata()
-//  }
-//  wr.Width = w
-//  wr.Height = h
-//  return wr.wrapText(txt), wr.LinesPerPage()
-//}
 
 func (wr *Wrapper) WrapBytes(byte []byte, font *Font) []string {
 	return wr.WrapText(string(byte), font)

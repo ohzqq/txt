@@ -2,9 +2,12 @@ package txt
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	"io"
+	"strings"
 
 	"github.com/crazy3lf/colorconv"
 	"golang.org/x/image/font"
@@ -31,17 +34,17 @@ type Font struct {
 	FontSize  int
 	DPI       int
 	WrapLines bool
-	wrapper   *Wrapper
+	paginate  bool
+	Wrapper   *Wrapper
 	font.Face
 }
 
 func NewFont(opts ...FontOpt) *Font {
 	f := &Font{
 		fgColor:  "#000000",
-		Width:    250,
 		FontSize: 16,
 		DPI:      72,
-		wrapper:  &Wrapper{},
+		Wrapper:  NewWrapper(),
 	}
 	for _, opt := range opts {
 		opt(f)
@@ -49,7 +52,7 @@ func NewFont(opts ...FontOpt) *Font {
 	if f.Face == nil {
 		f.Face = Inconsolata()
 	}
-	f.wrapper.Height = f.Height
+	f.Wrapper.Height = f.Height
 	return f
 }
 
@@ -65,11 +68,7 @@ func ParseFont(src []byte, opts *opentype.FaceOptions) (*Font, error) {
 }
 
 func (f *Font) WrapText(str string) []string {
-	return f.wrapper.WrapText(str, f)
-}
-
-func (f *Font) LinesPerPage() int {
-	return f.wrapper.LinesPerPage()
+	return f.Wrapper.WrapText(str, f)
 }
 
 func (f *Font) SetColors(fg, bg string) *Font {
@@ -86,21 +85,76 @@ func (f *Font) SetFgColor(fg string) *Font {
 	return f
 }
 
-func (f *Font) DrawString(str string, w, h int) {
-	drawer := f.GetDrawer(w, h)
+func (f *Font) WriteString(str string) {
+	lines := []string{str}
+	if f.WrapLines {
+		lines = f.WrapText(str)
+	}
+	pages := NewPaginator(lines, f.Wrapper.LinesPerPage())
+	for _, page := range pages.AllPages() {
+		txt := strings.TrimSpace(strings.Join(page, "\n"))
+		fmt.Printf("%#v\n", txt)
+	}
+}
+
+func (f *Font) calculateBounds(str string) {
+	if f.Width == 0 {
+		rect, _ := font.BoundString(f.Face, str)
+		f.Width = rect.Max.X.Floor()
+	}
+	if f.Height == 0 {
+		f.Height = f.Face.Metrics().Height.Round()
+	}
+}
+
+func (f *Font) WriteStringTo(wr io.Writer, str string) error {
+	lines := []string{str}
+	if f.WrapLines {
+		lines = f.WrapText(str)
+	}
+	pages := NewPaginator(lines, f.Wrapper.LinesPerPage())
+	for _, page := range pages.AllPages() {
+		txt := strings.TrimSpace(strings.Join(page, "\n"))
+		_, err := wr.Write([]byte(txt))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *Font) DrawString(str string) *font.Drawer {
+	f.calculateBounds(str)
+	drawer := f.GetDrawer()
 	drawer.DrawString(str)
+	return drawer
+}
+
+func (f *Font) GetDrawer() *font.Drawer {
+	f.NewBg(f.Width, f.Height)
+	return &font.Drawer{
+		Dst:  f.bg,
+		Src:  image.NewUniform(f.getFgColor()),
+		Face: f.Face,
+		Dot: fixed.Point26_6{
+			X: fixed.I(0),
+			Y: fixed.I(0),
+		},
+	}
 }
 
 func (f *Font) NewBg(w, h int) *Font {
-	var bc color.Color
-	var err error
-	if f.bgColor != "" {
-		bc, err = colorconv.HexToColor(f.bgColor)
-		if err != nil {
-			bc = color.Transparent
-		}
-	}
-	return f.SetBg(NewImg(w, h, bc))
+	//var bc color.Color
+	//var err error
+	//bc = color.Transparent
+	//if f.bgColor != "" {
+	//  bc, err = colorconv.HexToColor(f.bgColor)
+	//  if err != nil {
+	//  }
+	//}
+	img := image.NewRGBA(image.Rect(0, 0, f.Width, f.Height))
+	//println(f.bgColor)
+	return f.SetBg(img)
 }
 
 func (f *Font) SetBg(img draw.Image) *Font {
@@ -156,7 +210,7 @@ func (f *Font) SetSize(w, h int) *Font {
 
 func (f *Font) SetHeight(m int) *Font {
 	f.Height = m
-	f.wrapper.Height = f.Height
+	f.Wrapper.Height = f.Height
 	return f
 }
 
@@ -170,13 +224,27 @@ func WithFont(face font.Face) FontOpt {
 
 func WithMaxLines(ml int) FontOpt {
 	return func(wr *Font) {
-		wr.wrapper.MaxLines = ml
+		wr.Wrapper.MaxLines = ml
 	}
 }
 
 func WithLineWrap() FontOpt {
 	return func(wr *Font) {
 		wr.WrapLines = true
+	}
+}
+
+func WithSimpleLineWrap(w int) FontOpt {
+	return func(wr *Font) {
+		wr.WrapLines = true
+		wr.Wrapper.Simple = true
+		wr.Width = w
+	}
+}
+
+func WithPagination() FontOpt {
+	return func(wr *Font) {
+		wr.paginate = true
 	}
 }
 
@@ -201,18 +269,6 @@ func WithSize(w, h int) FontOpt {
 func WithFontSize(fs int) FontOpt {
 	return func(wr *Font) {
 		wr.FontSize = fs
-	}
-}
-
-func (f *Font) GetDrawer(w, h int) *font.Drawer {
-	return &font.Drawer{
-		Dst:  f.bg,
-		Src:  image.NewUniform(f.getFgColor()),
-		Face: f.Face,
-		Dot: fixed.Point26_6{
-			X: fixed.I(0),
-			Y: fixed.I(0),
-		},
 	}
 }
 
