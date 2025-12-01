@@ -13,13 +13,13 @@ import (
 type WrapOpt func(w *Wrapper)
 
 type Wrapper struct {
+	*Font
 	FontSize   int
 	Width      int
 	DPI        int
 	MaxLines   int
 	Height     int
 	LineHeight int
-	Font       font.Face
 	Simple     bool
 }
 
@@ -48,7 +48,7 @@ func SimpleWrap(txt string, w, maxLines int) ([]string, int) {
 func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
 	wr := NewWrapper(opts...)
 	if wr.Font == nil {
-		wr.Font = Inconsolata
+		wr.Font = Inconsolata()
 	}
 	return wr.WrapText(txt), wr.LinesPerPage()
 }
@@ -56,14 +56,21 @@ func WrapFont(txt string, opts ...WrapOpt) ([]string, int) {
 func WrapTextbox(txt string, w, h int, opts ...WrapOpt) ([]string, int) {
 	wr := NewWrapper(opts...)
 	if wr.Font == nil {
-		wr.Font = Inconsolata
+		wr.Font = Inconsolata()
 	}
 	wr.Width = w
 	wr.Height = h
 	return wr.WrapText(txt), wr.LinesPerPage()
 }
 
+func (wr *Wrapper) WrapBytes(byte []byte) []string {
+	return wr.WrapText(string(byte))
+}
+
 func (wr *Wrapper) WrapText(str string) []string {
+	if wr.Font == nil {
+		wr.Simple = true
+	}
 	if wr.Simple == true {
 		return simpleWrap(str, wr.Width)
 	}
@@ -108,7 +115,7 @@ func (wr *Wrapper) SetSize(w, h int) *Wrapper {
 	return wr
 }
 
-func (wr *Wrapper) SetFont(face font.Face) *Wrapper {
+func (wr *Wrapper) SetFont(face *Font) *Wrapper {
 	wr.Font = face
 	return wr
 }
@@ -130,7 +137,7 @@ func (pg *Wrapper) SetHeight(m int) *Wrapper {
 
 func (wr *Wrapper) WithTTF(src []byte, fs int) error {
 	wr.SetFontSize(fs)
-	f, err := NewTTF(src, wr.opentypeOpts())
+	f, err := NewFont(src, wr.opentypeOpts())
 	if err != nil {
 		return err
 	}
@@ -151,7 +158,7 @@ func WithMaxLines(maxLines int) WrapOpt {
 	}
 }
 
-func WithFont(face font.Face) WrapOpt {
+func WithFont(face *Font) WrapOpt {
 	return func(wr *Wrapper) {
 		wr.SetFont(face)
 	}
@@ -159,13 +166,13 @@ func WithFont(face font.Face) WrapOpt {
 
 func WithGoMono(fs int) WrapOpt {
 	return func(wr *Wrapper) {
-		wr.WithTTF(GoMono, fs)
+		wr.WithTTF(goMono, fs)
 	}
 }
 
 func WithGoRegular(fs int) WrapOpt {
 	return func(wr *Wrapper) {
-		wr.WithTTF(GoRegular, fs)
+		wr.WithTTF(goRegular, fs)
 	}
 }
 

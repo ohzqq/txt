@@ -6,6 +6,7 @@ require (
 	github.com/RoaringBitmap/roaring v1.9.0 // indirect
 	github.com/arran4/golang-wordwrap v0.0.3 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
+	github.com/crazy3lf/colorconv v1.2.0 // indirect
 	github.com/duke-git/lancet/v2 v2.3.8 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
