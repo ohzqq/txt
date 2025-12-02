@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 	"strings"
 
 	"github.com/crazy3lf/colorconv"
@@ -30,11 +29,9 @@ var (
 type Font struct {
 	fgColor      string
 	bgColor      string
-	bg           draw.Image
-	fg           image.Image
 	Width        int
 	Height       int
-	FontSize     int
+	fontSize     int
 	DPI          int
 	WrapLines    bool
 	paginate     bool
@@ -44,33 +41,42 @@ type Font struct {
 	Wrapper      *Wrapper
 	font         *sfnt.Font
 	renderer     *etxt.Renderer
-	//font *Face
 }
 
-func NewFont(opts ...FontOpt) *Font {
+func NewFont(fnt []byte, fs int, opts ...FontOpt) (*Font, error) {
 	f := &Font{
 		fgColor:    "#000000",
-		FontSize:   16,
 		DPI:        72,
+		fontSize:   fs,
 		LineHeight: 1,
 		MaxLines:   1,
 		renderer:   etxt.NewRenderer(),
 	}
+	err := f.ParseFont(fnt, fs)
+	if err != nil {
+		return nil, err
+	}
 	for _, opt := range opts {
 		opt(f)
 	}
-	if f.font == nil {
-		f.ParseFont(goRegular, f.FontSize)
-	}
-	f.renderer.SetFont(f.font)
-	f.renderer.SetColor(color.Black)
-	return f
+	return f, nil
 }
 
 func ParseFont(src []byte, opts *opentype.FaceOptions) (*Font, error) {
 	return &Font{
 		fgColor: "#000000",
 	}, nil
+}
+
+func (f *Font) ParseFont(src []byte, fs int) error {
+	fnt, err := NewSFNT(src)
+	if err != nil {
+		return err
+	}
+	f.font = fnt
+	f.renderer.SetFont(fnt)
+	f.SetFontSize(fs)
+	return nil
 }
 
 func (f *Font) WrapText(str string) []string {
@@ -89,9 +95,8 @@ func (f *Font) SetBgColor(bg string) *Font {
 }
 
 func (f *Font) SetFgColor(fg string) *Font {
-	fgc := f.getFgColor()
-	f.renderer.SetColor(fgc)
 	f.fgColor = fg
+	f.renderer.SetColor(f.getFgColor())
 	return f
 }
 
@@ -114,27 +119,9 @@ func (f *Font) WriteString(str string) {
 	}
 }
 
-func (f *Font) Face() font.Face {
-	fc, _ := opentype.NewFace(f.font, f.opentypeOpts())
-	return fc
+func (f *Font) NewBg(w, h int) image.Image {
+	return NewImg(f.Width, f.Height, f.getFgColor())
 }
-
-func (f *Font) NewBg(w, h int) *Font {
-	//var bc color.Color
-	//var err error
-	//bc = color.Transparent
-	//if f.bgColor != "" {
-	//  bc, err = colorconv.HexToColor(f.bgColor)
-	//  if err != nil {
-	//  }
-	//}
-	img := image.NewRGBA(image.Rect(0, 0, f.Width, f.Height))
-	//println(f.bgColor)
-	return f.SetBg(img)
-}
-
-//func (f *Font) Face() font.Face {
-//}
 
 func (f *Font) bgSize(text string) (int, int) {
 	var rect fract.Rect
@@ -147,11 +134,6 @@ func (f *Font) bgSize(text string) (int, int) {
 	return rect.Max.X.ToInt() + margin*2, rect.Max.Y.ToInt() + margin*2
 }
 
-func (f *Font) SetBg(img draw.Image) *Font {
-	f.bg = img
-	return f
-}
-
 func (f *Font) getFgColor() color.Color {
 	fg, err := colorconv.HexToColor(f.fgColor)
 	if err == nil {
@@ -161,7 +143,7 @@ func (f *Font) getFgColor() color.Color {
 }
 
 func (f *Font) Margin() int {
-	return f.LineHeight - f.FontSize
+	return f.LineHeight - int(f.fontSize)
 }
 
 func (f *Font) SetFont(face *sfnt.Font) *Font {
@@ -169,26 +151,21 @@ func (f *Font) SetFont(face *sfnt.Font) *Font {
 	return f
 }
 
+func (f *Font) Face() font.Face {
+	fc, _ := opentype.NewFace(f.font, f.opentypeOpts())
+	return fc
+}
+
 func (f *Font) opentypeOpts() *opentype.FaceOptions {
 	return &opentype.FaceOptions{
-		Size:    float64(f.FontSize),
+		Size:    float64(f.fontSize),
 		DPI:     float64(f.DPI),
 		Hinting: font.HintingNone,
 	}
 }
 
-func (f *Font) ParseFont(src []byte, fs int) error {
-	fnt, err := NewSFNT(src)
-	if err != nil {
-		return err
-	}
-	f.font = fnt
-	f.SetFontSize(fs)
-	return nil
-}
-
 func (f *Font) SetFontSize(fs int) *Font {
-	f.FontSize = fs
+	f.fontSize = fs
 	f.renderer.SetSize(float64(fs))
 	return f
 }
@@ -209,12 +186,6 @@ func (f *Font) SetHeight(m int) *Font {
 }
 
 type FontOpt func(f *Font)
-
-func WithFont(face *sfnt.Font) FontOpt {
-	return func(f *Font) {
-		f.SetFont(face)
-	}
-}
 
 func WithMaxLines(ml int) FontOpt {
 	return func(wr *Font) {
@@ -242,17 +213,16 @@ func WithPagination() FontOpt {
 	}
 }
 
-func WithGoMono(fs int) FontOpt {
-	return func(wr *Font) {
-		wr.ParseFont(goMono, fs)
-	}
+func GoMono() *sfnt.Font {
+	fnt, _ := NewSFNT(goMono)
+	return fnt
 }
 
-func WithGoRegular(fs int) FontOpt {
-	return func(wr *Font) {
-		wr.ParseFont(goRegular, fs)
-	}
+func GoRegular() *sfnt.Font {
+	fnt, _ := NewSFNT(goRegular)
+	return fnt
 }
+
 func WithSize(w, h int) FontOpt {
 	return func(wr *Font) {
 		wr.Width = w
@@ -272,12 +242,6 @@ func WithHeight(h int) FontOpt {
 	return func(wr *Font) {
 		wr.Height = h
 		wr.WrapLines = true
-	}
-}
-
-func WithFontSize(fs int) FontOpt {
-	return func(wr *Font) {
-		wr.FontSize = fs
 	}
 }
 

@@ -19,7 +19,10 @@ func TestTextWrap(t *testing.T) {
 	t.Skip()
 	//lines := NewFrame(tstStr, 26, 250)
 	//lines, totalLines := WrapFont(tstStr, WithGoMono(22), WithSize(250, 100))
-	ff := NewFont(WithGoMono(22), WithSimpleLineWrap(5))
+	ff, err := NewFont(goMono, 22, WithSimpleLineWrap(5))
+	if err != nil {
+		t.Fatal(err)
+	}
 	lines := ff.WrapText(tstStr)
 	linesPerPage := ff.LinesPerPage()
 	//lines, totalLines := WrapTextbox(tstStr, 250, 100)
@@ -39,7 +42,10 @@ func TestTextWrap(t *testing.T) {
 }
 
 func TestPagination(t *testing.T) {
-	ff := NewFont(WithGoMono(fontSize), testBoxSize)
+	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	if err != nil {
+		t.Fatal(err)
+	}
 	lines := ff.WrapText(tstStr)
 	want := ff.LinesPerPage()
 	pages := NewPaginator(lines, want)
@@ -51,7 +57,10 @@ func TestPagination(t *testing.T) {
 }
 
 func TestMaxLinesPerPage(t *testing.T) {
-	ff := NewFont(WithGoRegular(fontSize), WithMaxLines(3))
+	ff, err := NewFont(goRegular, fontSize, WithMaxLines(3))
+	if err != nil {
+		t.Fatal(err)
+	}
 	ff.WrapText(tstStr)
 	want := 3
 	if got := ff.LinesPerPage(); got != want {
@@ -60,7 +69,10 @@ func TestMaxLinesPerPage(t *testing.T) {
 }
 
 func TestHeightLinesPerPage(t *testing.T) {
-	ff := NewFont(WithGoRegular(fontSize), testBoxSize)
+	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ff.WrapText(tstStr)
 	want := 4
 	if got := ff.LinesPerPage(); got != want {
@@ -69,7 +81,10 @@ func TestHeightLinesPerPage(t *testing.T) {
 }
 
 func TestEtxt(t *testing.T) {
-	ff := NewFont(WithGoRegular(fontSize), testBoxSize)
+	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	if err != nil {
+		t.Fatal(err)
+	}
 	lines := ff.WrapText(tstStr)
 	pages := NewPaginator(lines, ff.LinesPerPage())
 	txt := pages.JoinCurrentWithSpace()
