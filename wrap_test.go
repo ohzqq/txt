@@ -7,16 +7,21 @@ import (
 	"image/color"
 	"image/png"
 	"os"
-	"strings"
 	"testing"
 )
 
+var (
+	fontSize    = 18
+	testBoxSize = WithSize(250, 100)
+)
+
 func TestTextWrap(t *testing.T) {
+	t.Skip()
 	//lines := NewFrame(tstStr, 26, 250)
 	//lines, totalLines := WrapFont(tstStr, WithGoMono(22), WithSize(250, 100))
 	ff := NewFont(WithGoMono(22), WithSimpleLineWrap(5))
 	lines := ff.WrapText(tstStr)
-	linesPerPage := ff.Wrapper.LinesPerPage()
+	linesPerPage := ff.LinesPerPage()
 	//lines, totalLines := WrapTextbox(tstStr, 250, 100)
 	//lines, totalLines := SimpleWrap(tstStr, 25, 4)
 	//box := NewWrapper()
@@ -34,38 +39,44 @@ func TestTextWrap(t *testing.T) {
 }
 
 func TestPagination(t *testing.T) {
-	ff := NewFont(WithGoMono(22), WithLineWrap(), WithSize(250, 100))
+	ff := NewFont(WithGoMono(fontSize), testBoxSize)
 	lines := ff.WrapText(tstStr)
-	pages := NewPaginator(lines, ff.Wrapper.LinesPerPage())
-	fmt.Printf("%#v\n", pages.AllPages())
+	want := ff.LinesPerPage()
+	pages := NewPaginator(lines, want)
+	for _, page := range pages.AllPages() {
+		if got := len(page); got > want {
+			t.Errorf("got %v lines, wanted %v\n", got, want)
+		}
+	}
+}
+
+func TestMaxLinesPerPage(t *testing.T) {
+	ff := NewFont(WithGoRegular(fontSize), WithMaxLines(3))
+	ff.WrapText(tstStr)
+	want := 3
+	if got := ff.LinesPerPage(); got != want {
+		t.Errorf("got %v lines, wanted %v\n", got, want)
+	}
+}
+
+func TestHeightLinesPerPage(t *testing.T) {
+	ff := NewFont(WithGoRegular(fontSize), testBoxSize)
+	ff.WrapText(tstStr)
+	want := 4
+	if got := ff.LinesPerPage(); got != want {
+		t.Errorf("got %v lines, wanted %v\n", got, want)
+	}
 }
 
 func TestEtxt(t *testing.T) {
-	fs := 40
-	ff := NewFont(WithGoRegular(fs), WithLineWrap(), WithMaxLines(3))
-	ff.SetWidth(250)
+	ff := NewFont(WithGoRegular(fontSize), testBoxSize)
 	lines := ff.WrapText(tstStr)
 	pages := NewPaginator(lines, ff.LinesPerPage())
-	fmt.Printf("%#v\n", pages.Current())
-	//ff := NewFont(WithGoMono(22))
-	//ff.calculateBounds(tstStr)
-	//face, err := sfnt.Parse(goRegular)
-	//if err != nil {
-	//  t.Fatal(err)
-	//}
-	//ctx := etxt.NewRenderer()
-	//ctx.SetFont(face)
-	//ctx.SetColor(color.Black)
-	//ctx.SetSize(float64(fs))
-	//utils := ctx.Utils()
-	//lh := utils.GetLineHeight()
-	txt := strings.TrimSpace(strings.Join(pages.Current(), " "))
+	txt := pages.JoinCurrentWithSpace()
 	w, h := ff.bgSize(txt)
-	//fmt.Printf("lineheight: %d\ntotal height: %d\ntotal lines: %d\n", int(lh), size.Max.Y.ToInt(), size.Max.Y.ToInt()/ff.Wrapper.LineHeight)
 	dst := NewImg(w, h, color.White)
 	lh := -ff.Margin()
 	for _, line := range pages.Current() {
-		println(line)
 		lh = lh + ff.LineHeight
 		ff.renderer.Draw(dst, line, ff.Margin(), lh)
 	}

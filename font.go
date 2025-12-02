@@ -8,7 +8,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io"
 	"strings"
 
 	"github.com/crazy3lf/colorconv"
@@ -20,7 +19,6 @@ import (
 	"golang.org/x/image/font/inconsolata"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
-	"golang.org/x/image/math/fixed"
 )
 
 var (
@@ -56,7 +54,6 @@ func NewFont(opts ...FontOpt) *Font {
 		DPI:        72,
 		LineHeight: 1,
 		MaxLines:   1,
-		Wrapper:    NewWrapper(),
 		renderer:   etxt.NewRenderer(),
 	}
 	for _, opt := range opts {
@@ -67,7 +64,6 @@ func NewFont(opts ...FontOpt) *Font {
 	}
 	f.renderer.SetFont(f.font)
 	f.renderer.SetColor(color.Black)
-	f.Wrapper.Height = f.Height
 	return f
 }
 
@@ -78,7 +74,9 @@ func ParseFont(src []byte, opts *opentype.FaceOptions) (*Font, error) {
 }
 
 func (f *Font) WrapText(str string) []string {
-	return f.Wrapper.WrapText(str, f)
+	lines, h := WrapText(str, f.Face(), f.Width)
+	f.LineHeight = h
+	return lines
 }
 
 func (f *Font) SetColors(fg, bg string) *Font {
@@ -109,7 +107,7 @@ func (f *Font) WriteString(str string) {
 	if f.WrapLines {
 		lines = f.WrapText(str)
 	}
-	pages := NewPaginator(lines, f.Wrapper.LinesPerPage())
+	pages := NewPaginator(lines, f.LinesPerPage())
 	for _, page := range pages.AllPages() {
 		txt := strings.TrimSpace(strings.Join(page, "\n"))
 		fmt.Printf("%#v\n", txt)
@@ -119,40 +117,6 @@ func (f *Font) WriteString(str string) {
 func (f *Font) Face() font.Face {
 	fc, _ := opentype.NewFace(f.font, f.opentypeOpts())
 	return fc
-}
-
-func (f *Font) WriteStringTo(wr io.Writer, str string) error {
-	lines := []string{str}
-	if f.WrapLines {
-		lines = f.WrapText(str)
-	}
-	pages := NewPaginator(lines, f.Wrapper.LinesPerPage())
-	for _, page := range pages.AllPages() {
-		txt := strings.TrimSpace(strings.Join(page, "\n"))
-		_, err := wr.Write([]byte(txt))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (f *Font) DrawString(str string) *font.Drawer {
-	drawer := f.GetDrawer()
-	drawer.DrawString(str)
-	return drawer
-}
-
-func (f *Font) GetDrawer() *font.Drawer {
-	f.NewBg(f.Width, f.Height)
-	return &font.Drawer{
-		Dst: f.bg,
-		Src: image.NewUniform(f.getFgColor()),
-		Dot: fixed.Point26_6{
-			X: fixed.I(0),
-			Y: fixed.I(0),
-		},
-	}
 }
 
 func (f *Font) NewBg(w, h int) *Font {
@@ -223,16 +187,6 @@ func (f *Font) ParseFont(src []byte, fs int) error {
 	return nil
 }
 
-func (f *Font) ParseTTF(src []byte, fs int) error {
-	fnt, err := NewSFNT(goRegular)
-	if err != nil {
-		return err
-	}
-	f.SetFontSize(fs)
-	f.SetFont(fnt)
-	return nil
-}
-
 func (f *Font) SetFontSize(fs int) *Font {
 	f.FontSize = fs
 	f.renderer.SetSize(float64(fs))
@@ -251,7 +205,6 @@ func (f *Font) SetSize(w, h int) *Font {
 
 func (f *Font) SetHeight(m int) *Font {
 	f.Height = m
-	f.Wrapper.Height = f.Height
 	return f
 }
 
@@ -265,8 +218,8 @@ func WithFont(face *sfnt.Font) FontOpt {
 
 func WithMaxLines(ml int) FontOpt {
 	return func(wr *Font) {
+		wr.WrapLines = true
 		wr.MaxLines = ml
-		wr.Wrapper.MaxLines = ml
 	}
 }
 
@@ -279,7 +232,6 @@ func WithLineWrap() FontOpt {
 func WithSimpleLineWrap(w int) FontOpt {
 	return func(wr *Font) {
 		wr.WrapLines = true
-		wr.Wrapper.Simple = true
 		wr.Width = w
 	}
 }
@@ -305,6 +257,21 @@ func WithSize(w, h int) FontOpt {
 	return func(wr *Font) {
 		wr.Width = w
 		wr.Height = h
+		wr.WrapLines = true
+	}
+}
+
+func WithWidth(w int) FontOpt {
+	return func(wr *Font) {
+		wr.Width = w
+		wr.WrapLines = true
+	}
+}
+
+func WithHeight(h int) FontOpt {
+	return func(wr *Font) {
+		wr.Height = h
+		wr.WrapLines = true
 	}
 }
 
@@ -314,34 +281,8 @@ func WithFontSize(fs int) FontOpt {
 	}
 }
 
-//func GoRegular(opts *opentype.FaceOptions) *Font {
-//  f, _ := NewTTF(goRegular, opts)
-//  return &Font{
-//    Face: f,
-//  }
-//}
-
-//func GoMono(opts *opentype.FaceOptions) *Font {
-//  f, _ := NewTTF(goMono, opts)
-//  return &Font{
-//    Face: f,
-//  }
-//}
-
-func Inconsolata() *Font {
-	return &Font{}
-}
-
 func NewSFNT(src []byte) (*sfnt.Font, error) {
 	return sfnt.Parse(src)
-}
-
-func NewTTF(src []byte, opts *opentype.FaceOptions) (font.Face, error) {
-	inc, err := opentype.Parse(src)
-	if err != nil {
-		return &opentype.Face{}, err
-	}
-	return opentype.NewFace(inc, opts)
 }
 
 //The MIT License (MIT)

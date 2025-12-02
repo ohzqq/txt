@@ -5,7 +5,6 @@ import (
 
 	"golang.org/x/exp/shiny/text"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -23,10 +22,6 @@ func NewWrapper() *Wrapper {
 	}
 }
 
-func (wr *Wrapper) WrapBytes(byte []byte, font *Font) []string {
-	return wr.WrapText(string(byte), font)
-}
-
 func WrapText(str string, face font.Face, w int) ([]string, int) {
 	var f text.Frame
 	f.SetFace(face)
@@ -37,43 +32,11 @@ func WrapText(str string, face font.Face, w int) ([]string, int) {
 	return wrapBox(&f)
 }
 
-func (wr *Wrapper) WrapText(str string, fnt *Font) []string {
-	face, _ := opentype.NewFace(fnt.font, fnt.opentypeOpts())
-	if wr.Simple == true {
-		return simpleWrap(str, fnt.Width)
-	}
-	lines, h := WrapText(str, face, fnt.Width)
-	wr.LineHeight = h
-	fnt.LineHeight = h
-	fnt.linesPerPage = calculateLinesPerPage(fnt.Height, fnt.LineHeight)
-	return lines
-}
-
 func calculateLinesPerPage(height, lineHeight int) int {
 	if height > 0 {
 		return height / lineHeight
 	}
 	return 1
-}
-
-func (pg *Wrapper) LinesPerPage() int {
-	if pg.Height > 0 {
-		return pg.Height / pg.LineHeight
-	}
-	if pg.MaxLines > 1 {
-		return pg.MaxLines
-	}
-	return 1
-}
-
-func (pg *Wrapper) SetMaxLines(m int) *Wrapper {
-	pg.MaxLines = m
-	return pg
-}
-
-func (pg *Wrapper) SetLineHeight(m int) *Wrapper {
-	pg.LineHeight = m
-	return pg
 }
 
 func wrapBox(f *text.Frame) ([]string, int) {
