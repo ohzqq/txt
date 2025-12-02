@@ -1,3 +1,5 @@
+//go:build gtxt
+
 package txt
 
 import (
@@ -10,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/crazy3lf/colorconv"
+	"github.com/tinne26/etxt"
+	"github.com/tinne26/etxt/fract"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
@@ -26,36 +30,43 @@ var (
 )
 
 type Font struct {
-	fgColor   string
-	bgColor   string
-	bg        draw.Image
-	fg        image.Image
-	Width     int
-	Height    int
-	FontSize  int
-	DPI       int
-	WrapLines bool
-	paginate  bool
-	Wrapper   *Wrapper
-	font.Face
-	font *sfnt.Font
+	fgColor      string
+	bgColor      string
+	bg           draw.Image
+	fg           image.Image
+	Width        int
+	Height       int
+	FontSize     int
+	DPI          int
+	WrapLines    bool
+	paginate     bool
+	LineHeight   int
+	linesPerPage int
+	MaxLines     int
+	Wrapper      *Wrapper
+	font         *sfnt.Font
+	renderer     *etxt.Renderer
+	//font *Face
 }
 
 func NewFont(opts ...FontOpt) *Font {
 	f := &Font{
-		fgColor:  "#000000",
-		FontSize: 16,
-		DPI:      72,
-		Wrapper:  NewWrapper(),
+		fgColor:    "#000000",
+		FontSize:   16,
+		DPI:        72,
+		LineHeight: 1,
+		MaxLines:   1,
+		Wrapper:    NewWrapper(),
+		renderer:   etxt.NewRenderer(),
 	}
-	fnt, _ := NewSFNT(goRegular)
-	f.font = fnt
 	for _, opt := range opts {
 		opt(f)
 	}
-	if f.Face == nil {
-		f.Face = Inconsolata()
+	if f.font == nil {
+		f.ParseFont(goRegular, f.FontSize)
 	}
+	f.renderer.SetFont(f.font)
+	f.renderer.SetColor(color.Black)
 	f.Wrapper.Height = f.Height
 	return f
 }
@@ -85,8 +96,17 @@ func (f *Font) SetBgColor(bg string) *Font {
 }
 
 func (f *Font) SetFgColor(fg string) *Font {
+	fgc := f.getFgColor()
+	f.renderer.SetColor(fgc)
 	f.fgColor = fg
 	return f
+}
+
+func (f *Font) LinesPerPage() int {
+	if f.Height > 0 {
+		return f.Height / f.LineHeight
+	}
+	return f.MaxLines
 }
 
 func (f *Font) WriteString(str string) {
@@ -137,9 +157,8 @@ func (f *Font) DrawString(str string) *font.Drawer {
 func (f *Font) GetDrawer() *font.Drawer {
 	f.NewBg(f.Width, f.Height)
 	return &font.Drawer{
-		Dst:  f.bg,
-		Src:  image.NewUniform(f.getFgColor()),
-		Face: f.Face,
+		Dst: f.bg,
+		Src: image.NewUniform(f.getFgColor()),
 		Dot: fixed.Point26_6{
 			X: fixed.I(0),
 			Y: fixed.I(0),
@@ -161,6 +180,20 @@ func (f *Font) NewBg(w, h int) *Font {
 	return f.SetBg(img)
 }
 
+//func (f *Font) Face() font.Face {
+//}
+
+func (f *Font) bgSize(text string) (int, int) {
+	var rect fract.Rect
+	if f.WrapLines {
+		rect = f.renderer.MeasureWithWrap(text, f.Width)
+	} else {
+		rect = f.renderer.Measure(text)
+	}
+	margin := f.Margin()
+	return rect.Max.X.ToInt() + margin*2, rect.Max.Y.ToInt() + margin*2
+}
+
 func (f *Font) SetBg(img draw.Image) *Font {
 	f.bg = img
 	return f
@@ -172,6 +205,10 @@ func (f *Font) getFgColor() color.Color {
 		return color.Black
 	}
 	return fg
+}
+
+func (f *Font) Margin() int {
+	return f.LineHeight - f.FontSize
 }
 
 func (f *Font) SetFont(face font.Face) *Font {
@@ -187,18 +224,33 @@ func (f *Font) opentypeOpts() *opentype.FaceOptions {
 	}
 }
 
-func (wr *Font) ParseTTF(src []byte, fs int) error {
-	wr.SetFontSize(fs)
-	f, err := ParseFont(src, wr.opentypeOpts())
+func (f *Font) ParseFont(src []byte, fs int) error {
+	fnt, err := NewSFNT(src)
 	if err != nil {
 		return err
 	}
-	wr.SetFont(f)
+	f.font = fnt
+	f.SetFontSize(fs)
+	return nil
+}
+
+func (f *Font) ParseTTF(src []byte, fs int) error {
+	fnt, err := NewSFNT(goRegular)
+	if err != nil {
+		return err
+	}
+	fc, err := opentype.NewFace(fnt, f.opentypeOpts())
+	if err != nil {
+		return err
+	}
+	f.SetFontSize(fs)
+	f.SetFont(fc)
 	return nil
 }
 
 func (f *Font) SetFontSize(fs int) *Font {
 	f.FontSize = fs
+	f.renderer.SetSize(float64(fs))
 	return f
 }
 
@@ -228,6 +280,7 @@ func WithFont(face font.Face) FontOpt {
 
 func WithMaxLines(ml int) FontOpt {
 	return func(wr *Font) {
+		wr.MaxLines = ml
 		wr.Wrapper.MaxLines = ml
 	}
 }
@@ -254,13 +307,13 @@ func WithPagination() FontOpt {
 
 func WithGoMono(fs int) FontOpt {
 	return func(wr *Font) {
-		wr.ParseTTF(goMono, fs)
+		wr.ParseFont(goMono, fs)
 	}
 }
 
 func WithGoRegular(fs int) FontOpt {
 	return func(wr *Font) {
-		wr.ParseTTF(goRegular, fs)
+		wr.ParseFont(goRegular, fs)
 	}
 }
 func WithSize(w, h int) FontOpt {

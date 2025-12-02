@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"golang.org/x/exp/shiny/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -25,19 +27,33 @@ func (wr *Wrapper) WrapBytes(byte []byte, font *Font) []string {
 	return wr.WrapText(string(byte), font)
 }
 
-func (wr *Wrapper) WrapText(str string, font *Font) []string {
-	if wr.Simple == true {
-		return simpleWrap(str, font.Width)
-	}
+func WrapText(str string, face font.Face, w int) ([]string, int) {
 	var f text.Frame
-	f.SetFace(font.Face)
-	f.SetMaxWidth(fixed.I(font.Width))
+	f.SetFace(face)
+	f.SetMaxWidth(fixed.I(w))
 	c := f.NewCaret()
 	c.WriteString(str)
 	c.Close()
-	lines, h := wrapBox(&f)
+	return wrapBox(&f)
+}
+
+func (wr *Wrapper) WrapText(str string, fnt *Font) []string {
+	face, _ := opentype.NewFace(fnt.font, fnt.opentypeOpts())
+	if wr.Simple == true {
+		return simpleWrap(str, fnt.Width)
+	}
+	lines, h := WrapText(str, face, fnt.Width)
 	wr.LineHeight = h
+	fnt.LineHeight = h
+	fnt.linesPerPage = calculateLinesPerPage(fnt.Height, fnt.LineHeight)
 	return lines
+}
+
+func calculateLinesPerPage(height, lineHeight int) int {
+	if height > 0 {
+		return height / lineHeight
+	}
+	return 1
 }
 
 func (pg *Wrapper) LinesPerPage() int {

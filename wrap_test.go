@@ -8,13 +8,12 @@ import (
 	"image/color"
 	"image/png"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/go-text/render"
 	fnt "github.com/go-text/typesetting/font"
-	"github.com/tinne26/etxt"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -48,7 +47,8 @@ func TestPagination(t *testing.T) {
 }
 
 func TestWriteFont(t *testing.T) {
-	ff := NewFont(WithGoMono(22))
+	ff := NewFont(WithGoMono(40), WithLineWrap())
+	ff.SetWidth(500)
 	err := ff.WriteStringTo(os.Stdout, tstStr)
 	if err != nil {
 		t.Fatal(err)
@@ -58,21 +58,34 @@ func TestWriteFont(t *testing.T) {
 }
 
 func TestEtxt(t *testing.T) {
+	fs := 40
+	ff := NewFont(WithGoRegular(fs), WithLineWrap(), WithMaxLines(3))
+	ff.SetWidth(250)
+	lines := ff.WrapText(tstStr)
+	pages := NewPaginator(lines, ff.LinesPerPage())
+	fmt.Printf("%#v\n", pages.Current())
 	//ff := NewFont(WithGoMono(22))
 	//ff.calculateBounds(tstStr)
-	face, err := sfnt.Parse(goRegular)
-	if err != nil {
-		t.Fatal(err)
+	//face, err := sfnt.Parse(goRegular)
+	//if err != nil {
+	//  t.Fatal(err)
+	//}
+	//ctx := etxt.NewRenderer()
+	//ctx.SetFont(face)
+	//ctx.SetColor(color.Black)
+	//ctx.SetSize(float64(fs))
+	//utils := ctx.Utils()
+	//lh := utils.GetLineHeight()
+	txt := strings.TrimSpace(strings.Join(pages.Current(), " "))
+	w, h := ff.bgSize(txt)
+	//fmt.Printf("lineheight: %d\ntotal height: %d\ntotal lines: %d\n", int(lh), size.Max.Y.ToInt(), size.Max.Y.ToInt()/ff.Wrapper.LineHeight)
+	dst := NewImg(w, h, color.White)
+	lh := -ff.Margin()
+	for _, line := range pages.Current() {
+		println(line)
+		lh = lh + ff.LineHeight
+		ff.renderer.Draw(dst, line, ff.Margin(), lh)
 	}
-	ctx := etxt.NewRenderer()
-	ctx.SetFont(face)
-	ctx.SetColor(color.Black)
-	utils := ctx.Utils()
-	lh := utils.GetLineHeight()
-	size := ctx.MeasureWithWrap(tstStr, 500)
-	fmt.Printf("lineheight: %d\ntotal height: %d\ntotal lines: %d\n", int(lh), size.Max.Y.ToInt(), size.Max.Y.ToInt()/int(lh))
-	dst := NewImg(size.Max.X.ToInt(), size.Max.Y.ToInt()+2, color.White)
-	ctx.DrawWithWrap(dst, tstStr, 0, 16, 500)
 
 	out := `testdata/test.png`
 	testImg, err := os.Create(out)
