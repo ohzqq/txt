@@ -1,5 +1,3 @@
-//go:build gtxt
-
 package txt
 
 import (
@@ -10,20 +8,24 @@ import (
 	"strings"
 
 	"github.com/crazy3lf/colorconv"
+	"github.com/go-fonts/dejavu/dejavusans"
+	"github.com/go-fonts/dejavu/dejavusansmono"
+	"github.com/go-fonts/dejavu/dejavuserif"
 	"github.com/tinne26/etxt"
 	"github.com/tinne26/etxt/fract"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
-	"golang.org/x/image/font/inconsolata"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
 )
 
 var (
-	goMono             = gomono.TTF
-	goRegular          = goregular.TTF
-	inconsolataRegular = inconsolata.Regular8x16
+	GoMono         = gomono.TTF
+	GoRegular      = goregular.TTF
+	DejaVuSans     = dejaVuSans()
+	DejaVuSansMono = dejaVuSansMono()
+	DejaVueSerif   = dejaVuSerif()
 )
 
 type Font struct {
@@ -39,11 +41,10 @@ type Font struct {
 	linesPerPage int
 	MaxLines     int
 	Wrapper      *Wrapper
-	font         *sfnt.Font
 	renderer     *etxt.Renderer
 }
 
-func NewFont(fnt []byte, fs int, opts ...FontOpt) (*Font, error) {
+func NewFont(fnt *sfnt.Font, fs int, opts ...FontOpt) (*Font, error) {
 	f := &Font{
 		fgColor:    "#000000",
 		DPI:        72,
@@ -52,10 +53,7 @@ func NewFont(fnt []byte, fs int, opts ...FontOpt) (*Font, error) {
 		MaxLines:   1,
 		renderer:   etxt.NewRenderer(),
 	}
-	err := f.ParseFont(fnt, fs)
-	if err != nil {
-		return nil, err
-	}
+	f.SetFont(fnt).SetFontSize(fs)
 	for _, opt := range opts {
 		opt(f)
 	}
@@ -73,7 +71,6 @@ func (f *Font) ParseFont(src []byte, fs int) error {
 	if err != nil {
 		return err
 	}
-	f.font = fnt
 	f.renderer.SetFont(fnt)
 	f.SetFontSize(fs)
 	return nil
@@ -147,12 +144,12 @@ func (f *Font) Margin() int {
 }
 
 func (f *Font) SetFont(face *sfnt.Font) *Font {
-	f.font = face
+	f.renderer.SetFont(face)
 	return f
 }
 
 func (f *Font) Face() font.Face {
-	fc, _ := opentype.NewFace(f.font, f.opentypeOpts())
+	fc, _ := opentype.NewFace(f.renderer.GetFont(), f.opentypeOpts())
 	return fc
 }
 
@@ -185,6 +182,21 @@ func (f *Font) SetHeight(m int) *Font {
 	return f
 }
 
+func dejaVuSans() *sfnt.Font {
+	fnt, _ := NewSFNT(dejavusans.TTF)
+	return fnt
+}
+
+func dejaVuSerif() *sfnt.Font {
+	fnt, _ := NewSFNT(dejavuserif.TTF)
+	return fnt
+}
+
+func dejaVuSansMono() *sfnt.Font {
+	fnt, _ := NewSFNT(dejavusansmono.TTF)
+	return fnt
+}
+
 type FontOpt func(f *Font)
 
 func WithMaxLines(ml int) FontOpt {
@@ -211,16 +223,6 @@ func WithPagination() FontOpt {
 	return func(wr *Font) {
 		wr.paginate = true
 	}
-}
-
-func GoMono() *sfnt.Font {
-	fnt, _ := NewSFNT(goMono)
-	return fnt
-}
-
-func GoRegular() *sfnt.Font {
-	fnt, _ := NewSFNT(goRegular)
-	return fnt
 }
 
 func WithSize(w, h int) FontOpt {

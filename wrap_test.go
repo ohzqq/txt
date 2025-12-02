@@ -19,7 +19,7 @@ func TestTextWrap(t *testing.T) {
 	t.Skip()
 	//lines := NewFrame(tstStr, 26, 250)
 	//lines, totalLines := WrapFont(tstStr, WithGoMono(22), WithSize(250, 100))
-	ff, err := NewFont(goMono, 22, WithSimpleLineWrap(5))
+	ff, err := NewFont(DejaVuSans, 22, WithSimpleLineWrap(5))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func TestTextWrap(t *testing.T) {
 }
 
 func TestPagination(t *testing.T) {
-	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestPagination(t *testing.T) {
 }
 
 func TestMaxLinesPerPage(t *testing.T) {
-	ff, err := NewFont(goRegular, fontSize, WithMaxLines(3))
+	ff, err := NewFont(DejaVuSans, fontSize, WithMaxLines(3))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestMaxLinesPerPage(t *testing.T) {
 }
 
 func TestHeightLinesPerPage(t *testing.T) {
-	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestHeightLinesPerPage(t *testing.T) {
 }
 
 func TestEtxt(t *testing.T) {
-	ff, err := NewFont(goRegular, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}

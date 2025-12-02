@@ -10,6 +10,7 @@ require (
 	github.com/crazy3lf/colorconv v1.2.0 // indirect
 	github.com/duke-git/lancet/v2 v2.3.8 // indirect
 	github.com/ebitengine/purego v0.3.0 // indirect
+	github.com/go-fonts/dejavu v0.3.4 // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20231223183121-56fa3ac82ce7 // indirect
 	github.com/go-text/render v0.2.0 // indirect
 	github.com/go-text/typesetting v0.3.0 // indirect
