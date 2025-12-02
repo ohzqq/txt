@@ -72,13 +72,8 @@ func NewFont(opts ...FontOpt) *Font {
 }
 
 func ParseFont(src []byte, opts *opentype.FaceOptions) (*Font, error) {
-	f, err := NewTTF(src, opts)
-	if err != nil {
-		return nil, err
-	}
 	return &Font{
 		fgColor: "#000000",
-		Face:    f,
 	}, nil
 }
 
@@ -121,14 +116,9 @@ func (f *Font) WriteString(str string) {
 	}
 }
 
-func (f *Font) calculateBounds(str string) {
-	if f.Width == 0 {
-		rect, _ := font.BoundString(f.Face, str)
-		f.Width = rect.Max.X.Round() // 2
-	}
-	if f.Height == 0 {
-		f.Height = f.Face.Metrics().Height.Round()
-	}
+func (f *Font) Face() font.Face {
+	fc, _ := opentype.NewFace(f.font, f.opentypeOpts())
+	return fc
 }
 
 func (f *Font) WriteStringTo(wr io.Writer, str string) error {
@@ -148,7 +138,6 @@ func (f *Font) WriteStringTo(wr io.Writer, str string) error {
 }
 
 func (f *Font) DrawString(str string) *font.Drawer {
-	f.calculateBounds(str)
 	drawer := f.GetDrawer()
 	drawer.DrawString(str)
 	return drawer
@@ -211,8 +200,8 @@ func (f *Font) Margin() int {
 	return f.LineHeight - f.FontSize
 }
 
-func (f *Font) SetFont(face font.Face) *Font {
-	f.Face = face
+func (f *Font) SetFont(face *sfnt.Font) *Font {
+	f.font = face
 	return f
 }
 
@@ -239,12 +228,8 @@ func (f *Font) ParseTTF(src []byte, fs int) error {
 	if err != nil {
 		return err
 	}
-	fc, err := opentype.NewFace(fnt, f.opentypeOpts())
-	if err != nil {
-		return err
-	}
 	f.SetFontSize(fs)
-	f.SetFont(fc)
+	f.SetFont(fnt)
 	return nil
 }
 
@@ -272,7 +257,7 @@ func (f *Font) SetHeight(m int) *Font {
 
 type FontOpt func(f *Font)
 
-func WithFont(face font.Face) FontOpt {
+func WithFont(face *sfnt.Font) FontOpt {
 	return func(f *Font) {
 		f.SetFont(face)
 	}
@@ -329,22 +314,22 @@ func WithFontSize(fs int) FontOpt {
 	}
 }
 
-func GoRegular(opts *opentype.FaceOptions) *Font {
-	f, _ := NewTTF(goRegular, opts)
-	return &Font{
-		Face: f,
-	}
-}
+//func GoRegular(opts *opentype.FaceOptions) *Font {
+//  f, _ := NewTTF(goRegular, opts)
+//  return &Font{
+//    Face: f,
+//  }
+//}
 
-func GoMono(opts *opentype.FaceOptions) *Font {
-	f, _ := NewTTF(goMono, opts)
-	return &Font{
-		Face: f,
-	}
-}
+//func GoMono(opts *opentype.FaceOptions) *Font {
+//  f, _ := NewTTF(goMono, opts)
+//  return &Font{
+//    Face: f,
+//  }
+//}
 
 func Inconsolata() *Font {
-	return &Font{Face: inconsolataRegular}
+	return &Font{}
 }
 
 func NewSFNT(src []byte) (*sfnt.Font, error) {

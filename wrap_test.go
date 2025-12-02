@@ -4,17 +4,11 @@ package txt
 
 import (
 	"fmt"
-	"image"
 	"image/color"
 	"image/png"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/go-text/render"
-	fnt "github.com/go-text/typesetting/font"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 )
 
 func TestTextWrap(t *testing.T) {
@@ -44,17 +38,6 @@ func TestPagination(t *testing.T) {
 	lines := ff.WrapText(tstStr)
 	pages := NewPaginator(lines, ff.Wrapper.LinesPerPage())
 	fmt.Printf("%#v\n", pages.AllPages())
-}
-
-func TestWriteFont(t *testing.T) {
-	ff := NewFont(WithGoMono(40), WithLineWrap())
-	ff.SetWidth(500)
-	err := ff.WriteStringTo(os.Stdout, tstStr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	//pages := NewPaginator(lines, ff.Wrapper.LinesPerPage())
-	//fmt.Printf("%#v\n", pages.AllPages())
 }
 
 func TestEtxt(t *testing.T) {
@@ -95,76 +78,6 @@ func TestEtxt(t *testing.T) {
 	defer testImg.Close()
 
 	err = png.Encode(testImg, dst)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestEncodeImg(t *testing.T) {
-	ff := NewFont(WithGoMono(22))
-	ff.calculateBounds(tstStr)
-	//ff.bgColor = "#ffffff"
-	//dr := ff.DrawString(tstStr)
-	out := `testdata/test.png`
-
-	println(ff.Height)
-	println(ff.Height)
-
-	img := NewImg(ff.Width, ff.Height, color.White)
-	drawer := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(color.Black),
-		Face: ff.Face,
-		Dot: fixed.Point26_6{
-			X: fixed.I(22),
-			Y: fixed.I(10),
-		},
-	}
-	drawer.DrawString(tstStr)
-
-	testImg, err := os.Create(out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testImg.Close()
-
-	err = png.Encode(testImg, img)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestEncodeImgRender(t *testing.T) {
-	ff := NewFont(WithGoMono(22))
-	ff.calculateBounds(tstStr)
-	//ff.bgColor = "#ffffff"
-	//dr := ff.DrawString(tstStr)
-	out := `testdata/test.png`
-	//format := imgconv.FormatOption{Format: imgconv.PNG}
-	//err := imgconv.Save(out, dr.Dst, format)
-	ttf, err := os.Open("testdata/Inconsolata-Regular.ttf")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ttf.Close()
-	face, err := fnt.ParseTTF(ttf)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	img := NewImg(ff.Width, ff.Height, color.White)
-	renderer := &render.Renderer{
-		FontSize: float32(ff.FontSize),
-		Color:    color.Black,
-	}
-	renderer.DrawString(tstStr, img, face)
-	testImg, err := os.Create(out)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testImg.Close()
-
-	err = png.Encode(testImg, img)
 	if err != nil {
 		t.Fatal(err)
 	}
