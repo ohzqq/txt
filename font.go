@@ -15,6 +15,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/inconsolata"
 	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -37,6 +38,7 @@ type Font struct {
 	paginate  bool
 	Wrapper   *Wrapper
 	font.Face
+	font *sfnt.Font
 }
 
 func NewFont(opts ...FontOpt) *Font {
@@ -46,6 +48,8 @@ func NewFont(opts ...FontOpt) *Font {
 		DPI:      72,
 		Wrapper:  NewWrapper(),
 	}
+	fnt, _ := NewSFNT(goRegular)
+	f.font = fnt
 	for _, opt := range opts {
 		opt(f)
 	}
@@ -100,7 +104,7 @@ func (f *Font) WriteString(str string) {
 func (f *Font) calculateBounds(str string) {
 	if f.Width == 0 {
 		rect, _ := font.BoundString(f.Face, str)
-		f.Width = rect.Max.X.Floor()
+		f.Width = rect.Max.X.Round() // 2
 	}
 	if f.Height == 0 {
 		f.Height = f.Face.Metrics().Height.Round()
@@ -288,6 +292,10 @@ func GoMono(opts *opentype.FaceOptions) *Font {
 
 func Inconsolata() *Font {
 	return &Font{Face: inconsolataRegular}
+}
+
+func NewSFNT(src []byte) (*sfnt.Font, error) {
+	return sfnt.Parse(src)
 }
 
 func NewTTF(src []byte, opts *opentype.FaceOptions) (font.Face, error) {

@@ -1,14 +1,21 @@
+//go:build gtxt
+
 package txt
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"image/png"
 	"os"
 	"testing"
 
 	"github.com/go-text/render"
-	"github.com/go-text/typesetting/font"
+	fnt "github.com/go-text/typesetting/font"
+	"github.com/tinne26/etxt"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/sfnt"
+	"golang.org/x/image/math/fixed"
 )
 
 func TestTextWrap(t *testing.T) {
@@ -50,7 +57,71 @@ func TestWriteFont(t *testing.T) {
 	//fmt.Printf("%#v\n", pages.AllPages())
 }
 
+func TestEtxt(t *testing.T) {
+	//ff := NewFont(WithGoMono(22))
+	//ff.calculateBounds(tstStr)
+	face, err := sfnt.Parse(goRegular)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := etxt.NewRenderer()
+	ctx.SetFont(face)
+	ctx.SetColor(color.Black)
+	utils := ctx.Utils()
+	lh := utils.GetLineHeight()
+	size := ctx.MeasureWithWrap(tstStr, 500)
+	fmt.Printf("lineheight: %d\ntotal height: %d\ntotal lines: %d\n", int(lh), size.Max.Y.ToInt(), size.Max.Y.ToInt()/int(lh))
+	dst := NewImg(size.Max.X.ToInt(), size.Max.Y.ToInt()+2, color.White)
+	ctx.DrawWithWrap(dst, tstStr, 0, 16, 500)
+
+	out := `testdata/test.png`
+	testImg, err := os.Create(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testImg.Close()
+
+	err = png.Encode(testImg, dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestEncodeImg(t *testing.T) {
+	ff := NewFont(WithGoMono(22))
+	ff.calculateBounds(tstStr)
+	//ff.bgColor = "#ffffff"
+	//dr := ff.DrawString(tstStr)
+	out := `testdata/test.png`
+
+	println(ff.Height)
+	println(ff.Height)
+
+	img := NewImg(ff.Width, ff.Height, color.White)
+	drawer := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(color.Black),
+		Face: ff.Face,
+		Dot: fixed.Point26_6{
+			X: fixed.I(22),
+			Y: fixed.I(10),
+		},
+	}
+	drawer.DrawString(tstStr)
+
+	testImg, err := os.Create(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testImg.Close()
+
+	err = png.Encode(testImg, img)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestEncodeImgRender(t *testing.T) {
 	ff := NewFont(WithGoMono(22))
 	ff.calculateBounds(tstStr)
 	//ff.bgColor = "#ffffff"
@@ -63,7 +134,7 @@ func TestEncodeImg(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ttf.Close()
-	face, err := font.ParseTTF(ttf)
+	face, err := fnt.ParseTTF(ttf)
 	if err != nil {
 		t.Fatal(err)
 	}
