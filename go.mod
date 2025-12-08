@@ -21,6 +21,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/kljensen/snowball v0.9.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/ohzqq/pages v0.0.0-20251130172503-ec63c635a164 // indirect

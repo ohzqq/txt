@@ -2,15 +2,15 @@ package txt
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"strings"
 
-	"github.com/crazy3lf/colorconv"
 	"github.com/go-fonts/dejavu/dejavusans"
 	"github.com/go-fonts/dejavu/dejavusansmono"
 	"github.com/go-fonts/dejavu/dejavuserif"
+	"github.com/lucasb-eyer/go-colorful"
 	"github.com/tinne26/etxt"
 	"github.com/tinne26/etxt/fract"
 	"golang.org/x/image/font"
@@ -29,31 +29,29 @@ var (
 )
 
 type Font struct {
-	fgColor      string
-	bgColor      string
+	Fg           string
+	Bg           string
 	Width        int
 	Height       int
-	fontSize     int
 	DPI          int
 	WrapLines    bool
 	paginate     bool
 	LineHeight   int
 	linesPerPage int
 	MaxLines     int
-	Wrapper      *Wrapper
 	renderer     *etxt.Renderer
+	dst          draw.Image
 }
 
-func NewFont(fnt *sfnt.Font, fs int, opts ...FontOpt) (*Font, error) {
+func NewFont(fnt *sfnt.Font, opts ...FontOpt) (*Font, error) {
 	f := &Font{
-		fgColor:    "#000000",
 		DPI:        72,
-		fontSize:   fs,
 		LineHeight: 1,
 		MaxLines:   1,
 		renderer:   etxt.NewRenderer(),
 	}
-	f.SetFont(fnt).SetFontSize(fs)
+	f.SetFont(fnt).
+		SetFgColor("#000000")
 	for _, opt := range opts {
 		opt(f)
 	}
@@ -62,7 +60,7 @@ func NewFont(fnt *sfnt.Font, fs int, opts ...FontOpt) (*Font, error) {
 
 func ParseFont(src []byte, opts *opentype.FaceOptions) (*Font, error) {
 	return &Font{
-		fgColor: "#000000",
+		Fg: "#000000",
 	}, nil
 }
 
@@ -87,12 +85,12 @@ func (f *Font) SetColors(fg, bg string) *Font {
 }
 
 func (f *Font) SetBgColor(bg string) *Font {
-	f.bgColor = bg
+	f.Bg = bg
 	return f
 }
 
 func (f *Font) SetFgColor(fg string) *Font {
-	f.fgColor = fg
+	f.Fg = fg
 	f.renderer.SetColor(f.getFgColor())
 	return f
 }
@@ -104,20 +102,24 @@ func (f *Font) LinesPerPage() int {
 	return f.MaxLines
 }
 
-func (f *Font) WriteString(str string) {
-	lines := []string{str}
-	if f.WrapLines {
-		lines = f.WrapText(str)
+func (ff *Font) Draw(lines ...string) image.Image {
+	dst := ff.GetBg(strings.Join(lines, " "))
+	lh := -ff.Margin()
+	for _, line := range lines {
+		lh = lh + ff.LineHeight
+		ff.renderer.Draw(dst, line, ff.Margin(), lh)
 	}
-	pages := NewPaginator(lines, f.LinesPerPage())
-	for _, page := range pages.AllPages() {
-		txt := strings.TrimSpace(strings.Join(page, "\n"))
-		fmt.Printf("%#v\n", txt)
-	}
+	return dst
 }
 
-func (f *Font) NewBg(w, h int) image.Image {
-	return NewImg(f.Width, f.Height, f.getFgColor())
+func (f *Font) NewBg(w, h int) draw.Image {
+	return NewImg(w, h, f.getBgColor())github.com/lucasb-eyer/go-colorful
+}
+
+func (f *Font) GetBg(txt string) draw.Image {
+	w, h := f.bgSize(txt)
+	f.dst = NewImg(w, h, f.getBgColor())
+	return f.dst
 }
 
 func (f *Font) bgSize(text string) (int, int) {
@@ -132,15 +134,33 @@ func (f *Font) bgSize(text string) (int, int) {
 }
 
 func (f *Font) getFgColor() color.Color {
-	fg, err := colorconv.HexToColor(f.fgColor)
-	if err == nil {
+	fg, err := colorful.Hex(f.Fg)
+	if err != nil {
+		//return fg
 		return color.Black
 	}
 	return fg
 }
 
+func (f *Font) getBgColor() color.Color {
+	fg, err := colorful.Hex(f.Bg)
+	if err != nil {
+		return color.Transparent
+	}
+	return fg
+}
+
+func (f *Font) SetBg(hex string) *Font {
+	f.Bg = hex
+	return f
+}
+
 func (f *Font) Margin() int {
-	return f.LineHeight - int(f.fontSize)
+	return f.LineHeight - f.GetFontSize()
+}
+
+func (f *Font) GetFontSize() int {
+	return int(f.renderer.GetSize())
 }
 
 func (f *Font) SetFont(face *sfnt.Font) *Font {
@@ -154,15 +174,15 @@ func (f *Font) Face() font.Face {
 }
 
 func (f *Font) opentypeOpts() *opentype.FaceOptions {
+	fs := f.GetFontSize()
 	return &opentype.FaceOptions{
-		Size:    float64(f.fontSize),
+		Size:    float64(fs),
 		DPI:     float64(f.DPI),
 		Hinting: font.HintingNone,
 	}
 }
 
 func (f *Font) SetFontSize(fs int) *Font {
-	f.fontSize = fs
 	f.renderer.SetSize(float64(fs))
 	return f
 }
@@ -244,6 +264,12 @@ func WithHeight(h int) FontOpt {
 	return func(wr *Font) {
 		wr.Height = h
 		wr.WrapLines = true
+	}
+}
+
+func WithDPI(dpi int) FontOpt {
+	return func(wr *Font) {
+		wr.DPI = dpi
 	}
 }
 

@@ -1,10 +1,7 @@
-//go:build gtxt
-
 package txt
 
 import (
 	"fmt"
-	"image/color"
 	"image/png"
 	"os"
 	"testing"
@@ -19,7 +16,7 @@ func TestTextWrap(t *testing.T) {
 	t.Skip()
 	//lines := NewFrame(tstStr, 26, 250)
 	//lines, totalLines := WrapFont(tstStr, WithGoMono(22), WithSize(250, 100))
-	ff, err := NewFont(DejaVuSans, 22, WithSimpleLineWrap(5))
+	ff, err := NewFont(DejaVuSans, WithSimpleLineWrap(5))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,10 +39,11 @@ func TestTextWrap(t *testing.T) {
 }
 
 func TestPagination(t *testing.T) {
-	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}
+	ff.SetFontSize(fontSize)
 	lines := ff.WrapText(tstStr)
 	want := ff.LinesPerPage()
 	pages := NewPaginator(lines, want)
@@ -57,10 +55,11 @@ func TestPagination(t *testing.T) {
 }
 
 func TestMaxLinesPerPage(t *testing.T) {
-	ff, err := NewFont(DejaVuSans, fontSize, WithMaxLines(3))
+	ff, err := NewFont(DejaVuSans, WithMaxLines(3))
 	if err != nil {
 		t.Fatal(err)
 	}
+	ff.SetFontSize(fontSize)
 	ff.WrapText(tstStr)
 	want := 3
 	if got := ff.LinesPerPage(); got != want {
@@ -69,10 +68,11 @@ func TestMaxLinesPerPage(t *testing.T) {
 }
 
 func TestHeightLinesPerPage(t *testing.T) {
-	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}
+	ff.SetFontSize(fontSize)
 	ff.WrapText(tstStr)
 	want := 4
 	if got := ff.LinesPerPage(); got != want {
@@ -81,20 +81,23 @@ func TestHeightLinesPerPage(t *testing.T) {
 }
 
 func TestEtxt(t *testing.T) {
-	ff, err := NewFont(DejaVuSans, fontSize, testBoxSize)
+	ff, err := NewFont(DejaVuSans, testBoxSize)
 	if err != nil {
 		t.Fatal(err)
 	}
+	ff.SetFontSize(fontSize).SetBg("#ffffff")
 	lines := ff.WrapText(tstStr)
 	pages := NewPaginator(lines, ff.LinesPerPage())
-	txt := pages.JoinCurrentWithSpace()
-	w, h := ff.bgSize(txt)
-	dst := NewImg(w, h, color.White)
-	lh := -ff.Margin()
-	for _, line := range pages.Current() {
-		lh = lh + ff.LineHeight
-		ff.renderer.Draw(dst, line, ff.Margin(), lh)
-	}
+	//txt := pages.JoinCurrentWithSpace()
+	dst := ff.Draw(pages.Current()...)
+	//dst := ff.GetBg(txt)
+	//dst := ff.NewBg(w, h)
+	//dst := NewImg(w, h, color.White)
+	//lh := -ff.Margin()
+	//for _, line := range pages.Current() {
+	//  lh = lh + ff.LineHeight
+	//  ff.renderer.Draw(dst, line, ff.Margin(), lh)
+	//}
 
 	out := `testdata/test.png`
 	testImg, err := os.Create(out)
