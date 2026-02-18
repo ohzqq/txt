@@ -1,8 +1,6 @@
 package txt
 
 import (
-	"strings"
-
 	"github.com/kljensen/snowball/english"
 	"github.com/ohzqq/txt/sep"
 )
@@ -13,11 +11,11 @@ func Split(str string, s sep.Func) []string {
 	if s == nil {
 		return []string{str}
 	}
-	return strings.FieldsFunc(str, s)
+	return sep.Split(str, s)
 }
 
-func Normalize(ls []string, normies []Normalizer) Tokens {
-	toks := make(Tokens, len(ls))
+func Normalize(ls []string, normies []Normalizer) AllTokens {
+	toks := make(AllTokens, len(ls))
 	for i, l := range ls {
 		t := normalize(l, normies)
 		toks[i] = NewToken(l, t)
@@ -37,6 +35,10 @@ func normalize(label string, normies []Normalizer) string {
 		label = norm(label)
 	}
 	return label
+}
+
+func NoopNormalizer(str string) string {
+	return str
 }
 
 func StripPunct(token string) string {

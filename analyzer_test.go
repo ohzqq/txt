@@ -1,5 +1,3 @@
-//go:build ignore
-
 package txt
 
 import (
@@ -29,6 +27,28 @@ func TestDefaultAnalyzer(t *testing.T) {
 			t.Error(err)
 		}
 		numToks := tokens.Len()
+		if want != numToks {
+			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
+		}
+	}
+}
+
+func TestSplitOnSpace(t *testing.T) {
+	var testStrings = map[string]int{
+		``:                    0,
+		`!@@#$$%%^`:           1,
+		`quick brown fox`:     3,
+		`QUICK BROWN FOX`:     3,
+		`the quick brown fox`: 4,
+		`the quick brown fox jumped and is running`:        8,
+		`the quick, brown fox jumped! (and is running)`:    8,
+		`The quick, brown fox jumped! (And is running)`:    8,
+		`The quick, brown fox jumped in! (And is running)`: 9,
+	}
+
+	for test, want := range testStrings {
+		tokens := sep.Whitespace(test)
+		numToks := len(tokens)
 		if want != numToks {
 			t.Errorf("got %d tokens, wanted %d\n", numToks, want)
 		}
@@ -376,7 +396,7 @@ func TestAnalyzerSetFieldsFunc(t *testing.T) {
 		`The quick, brown fox jumped! (And is running)`: 2,
 	}
 
-	ana := New().WithSep(sep.Comma)
+	ana := New().WithSep(sep.OnComma)
 	for test, want := range testStrings {
 		tokens, err := ana.Tokenize(test)
 		if err != nil && !errors.Is(err, FieldsFuncErr) && !errors.Is(err, EmptyStrErr) {

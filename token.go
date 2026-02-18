@@ -15,7 +15,11 @@ type Token struct {
 	fuzzy.Match
 }
 
-type Tokens []*Token
+type Tokens struct {
+	toks []*Token
+}
+
+type AllTokens []*Token
 
 var (
 	FieldsFuncErr = errors.New("strings.FieldsFunc returned an empty slice or the string was empty")
@@ -30,8 +34,32 @@ func NewToken(label, val string) *Token {
 	}
 }
 
-func (toks Tokens) Find(q string) (Tokens, error) {
-	var tokens Tokens
+func NewTokens() *Tokens {
+	return &Tokens{}
+}
+
+func (t *Tokens) AddString(str string) *Tokens {
+	t.AddToken(NewToken(str, str))
+	return t
+}
+
+func (t *Tokens) SetStringSlice(str []string) *Tokens {
+	//t.AddToken(NewToken(str, str))
+	return t
+}
+
+func (t *Tokens) SetTokens(toks []*Token) *Tokens {
+	t.toks = toks
+	return t
+}
+
+func (t *Tokens) AddToken(tok *Token) *Tokens {
+	t.toks = append(t.toks, tok)
+	return t
+}
+
+func (toks AllTokens) Find(q string) (AllTokens, error) {
+	var tokens AllTokens
 	for i, tok := range toks {
 		if tok.Value == q {
 			tok.Match = newMatch(tok.Value, i)
@@ -48,12 +76,12 @@ func (toks Tokens) Find(q string) (Tokens, error) {
 	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
 }
 
-func (toks Tokens) Without(sw Tokens) Tokens {
+func (toks AllTokens) Without(sw AllTokens) AllTokens {
 	return lo.Without(toks, sw...)
 }
 
-func (toks Tokens) Search(q string) (Tokens, error) {
-	var tokens Tokens
+func (toks AllTokens) Search(q string) (AllTokens, error) {
+	var tokens AllTokens
 	for _, m := range fuzzy.FindFrom(q, toks) {
 		tok := toks[m.Index]
 		tok.Match = m
@@ -67,7 +95,7 @@ func (toks Tokens) Search(q string) (Tokens, error) {
 	return nil, fmt.Errorf("%w for query '%s'\n", NoMatchErr, q)
 }
 
-func (toks Tokens) FindByLabel(label string) (*Token, error) {
+func (toks AllTokens) FindByLabel(label string) (*Token, error) {
 	for i, token := range toks {
 		if token.Label == label {
 			token.Match = newMatch(token.Label, i)
@@ -77,7 +105,7 @@ func (toks Tokens) FindByLabel(label string) (*Token, error) {
 	return nil, fmt.Errorf("%w for label '%s'\n", NoMatchErr, label)
 }
 
-func (toks Tokens) FindByValue(val string) (*Token, error) {
+func (toks AllTokens) FindByValue(val string) (*Token, error) {
 	for i, token := range toks {
 		if token.Value == val {
 			token.Match = newMatch(token.Value, i)
@@ -87,8 +115,8 @@ func (toks Tokens) FindByValue(val string) (*Token, error) {
 	return nil, fmt.Errorf("%w for val '%s'\n", NoMatchErr, val)
 }
 
-func (toks Tokens) FindByIndex(ti []int) (Tokens, error) {
-	var tokens Tokens
+func (toks AllTokens) FindByIndex(ti []int) (AllTokens, error) {
+	var tokens AllTokens
 	for _, tok := range ti {
 		if tok < toks.Len() {
 			tokens = append(tokens, toks[tok])
@@ -100,7 +128,7 @@ func (toks Tokens) FindByIndex(ti []int) (Tokens, error) {
 	return nil, fmt.Errorf("%w for indices %v\n", NoMatchErr, ti)
 }
 
-func (toks Tokens) Values() []string {
+func (toks AllTokens) Values() []string {
 	vals := make([]string, toks.Len())
 	for i, tok := range toks {
 		vals[i] = tok.Value
@@ -108,7 +136,7 @@ func (toks Tokens) Values() []string {
 	return vals
 }
 
-func (toks Tokens) Labels() []string {
+func (toks AllTokens) Labels() []string {
 	vals := make([]string, toks.Len())
 	for i, tok := range toks {
 		vals[i] = tok.Label
@@ -116,15 +144,15 @@ func (toks Tokens) Labels() []string {
 	return vals
 }
 
-func (toks Tokens) String(i int) string {
+func (toks AllTokens) String(i int) string {
 	return toks[i].Value
 }
 
-func (toks Tokens) Len() int {
+func (toks AllTokens) Len() int {
 	return len(toks)
 }
 
-func (toks Tokens) Sort(cmp func(a, b *Token) int, order string) Tokens {
+func (toks AllTokens) Sort(cmp func(a, b *Token) int, order string) AllTokens {
 	tokens := toks
 	slices.SortStableFunc(tokens, cmp)
 	if order == "desc" {
@@ -133,7 +161,7 @@ func (toks Tokens) Sort(cmp func(a, b *Token) int, order string) Tokens {
 	return tokens
 }
 
-func (toks Tokens) SortStable(cmp func(a, b *Token) int, order string) Tokens {
+func (toks AllTokens) SortStable(cmp func(a, b *Token) int, order string) AllTokens {
 	tokens := toks
 	slices.SortStableFunc(tokens, cmp)
 	if order == "desc" {
@@ -142,11 +170,11 @@ func (toks Tokens) SortStable(cmp func(a, b *Token) int, order string) Tokens {
 	return tokens
 }
 
-func (toks Tokens) SortAlphaAsc() Tokens {
+func (toks AllTokens) SortAlphaAsc() AllTokens {
 	return toks.Sort(SortByAlphaFunc, "asc")
 }
 
-func (toks Tokens) SortAlphaDesc() Tokens {
+func (toks AllTokens) SortAlphaDesc() AllTokens {
 	return toks.Sort(SortByAlphaFunc, "desc")
 }
 

@@ -14,7 +14,7 @@ type Analyzer struct {
 
 func New(opts ...Option) *Analyzer {
 	ana := &Analyzer{
-		sep: sep.Whitespace,
+		sep: sep.OnWhitespace,
 	}
 
 	for _, opt := range opts {
@@ -49,29 +49,30 @@ func (ana *Analyzer) AddNormalizer(normies ...Normalizer) *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) Tokenize(text string) (Tokens, error) {
+func (ana *Analyzer) Tokenize(text string) (AllTokens, error) {
 	var (
-		toks   Tokens
+		tokz   AllTokens
 		tokens []string
+		//toks   = NewTokens()
 	)
 
 	if text == "" {
-		return toks, EmptyStrErr
+		return tokz, EmptyStrErr
 	}
 
 	tokens = Split(text, ana.sep)
 
 	if len(tokens) == 0 {
-		return toks, FieldsFuncErr
+		return tokz, FieldsFuncErr
 	}
 
 	if len(ana.normalizers) > 0 {
-		toks = Normalize(tokens, ana.normalizers)
+		tokz = Normalize(tokens, ana.normalizers)
 	}
 
-	toks = toks.Without(ana.Stopwords())
+	tokz = tokz.Without(ana.Stopwords())
 
-	return toks, nil
+	return tokz, nil
 }
 
 func (ana *Analyzer) WithSep(sep sep.Func) *Analyzer {
@@ -93,9 +94,9 @@ func (ana *Analyzer) SetStopWords(words []string) *Analyzer {
 	return ana
 }
 
-func (ana *Analyzer) Stopwords() Tokens {
+func (ana *Analyzer) Stopwords() AllTokens {
 	if !ana.WithoutStopWords() {
-		return Tokens{}
+		return AllTokens{}
 	}
 	toks := Normalize(ana.stopWords, ana.normalizers)
 	return toks
