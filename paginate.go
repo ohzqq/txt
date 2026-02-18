@@ -17,3 +17,8 @@ func PaginateTextbox(txt string, w, h int, opts ...WrapOpt) *pages.Pages[string]
 	lines, pp := WrapTextbox(txt, w, h, opts...)
 	return newPaginator(lines, pp)
 }
+
+func PaginateText(txt string, w int, maxLines int) *pages.Pages[string] {
+	lines, pp := SimpleWrap(txt, w, maxLines)
+	return newPaginator(lines, pp)
+}

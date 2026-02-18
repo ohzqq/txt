@@ -24,12 +24,17 @@ func TestTextWrap(t *testing.T) {
 	fmt.Printf("%#v\n", totalLines)
 }
 
-func TestPagination(t *testing.T) {
-	box := NewWrapper(WithGoMono(22))
+func TestPaginationBox(t *testing.T) {
+	box := NewWrapper(WithGoMono(16))
 	box.
 		SetFontSize(30).
 		SetWidth(250)
-	pages := box.Paginate(tstStr)
+	pages := PaginateTextbox(tstStr, 250, 100, WithGoMono(16))
+	fmt.Printf("%#v\n", pages.AllPages())
+}
+
+func TestPaginationText(t *testing.T) {
+	pages := PaginateText(tstStr, 25, 3)
 	fmt.Printf("%#v\n", pages.AllPages())
 }
 
